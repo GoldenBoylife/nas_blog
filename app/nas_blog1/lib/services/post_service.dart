@@ -88,6 +88,7 @@ class PostService{
     String? category_slug,
     //? nullable 타입, String또는 null일수도 있다.
     //여기에다가 thumnail추가하기.
+    String? thumbnail_rel_url, //서버쪽에다가는 상대경로만 보낼 것
   }) async{
     //서버로 보낼 JSON payload
     final payload = <String, dynamic> {
@@ -95,6 +96,7 @@ class PostService{
       'body_markdown' : body_markdown,
       'tags': tags,
       if( category_slug != null) 'category': category_slug,
+      if( thumbnail_rel_url !=null) 'thumbnail': thumbnail_rel_url,
     };
 
     final res = await http.post(

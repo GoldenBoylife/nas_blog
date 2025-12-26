@@ -115,6 +115,8 @@ class _ImageOptionDialogState extends State<_ImageOptionDialog> {
   }
 }
 
+
+
 class EditorPg extends StatefulWidget {
   const EditorPg({super.key});
 
@@ -122,12 +124,17 @@ class EditorPg extends StatefulWidget {
   State<EditorPg> createState() => _EditorPgState();
 }
 
+
+
 class _EditorPgState extends State<EditorPg> {
   late final TextEditingController title_ctrl_;
   late final TextEditingController body_ctrl_;
 
   late bool is_saving_;
   String? error_msg_;
+  String? _thumbnail_rel_url; //상대 경로 /assets/uuid.png
+  String? _thumbnail_full_url; //미리 보기용 full url 
+
 
   List<BlogCategory> _categories = [];
   BlogCategory? _selectedCategory; //현재 선택된 카테고리
@@ -144,6 +151,9 @@ class _EditorPgState extends State<EditorPg> {
     _fetchCategories(); //카테고리 로딩
 
   }
+
+/*funcs */
+
 
   Future<void> _fetchCategories() async {
     try {
@@ -220,6 +230,49 @@ class _EditorPgState extends State<EditorPg> {
     }
   }
 
+  
+Future<void> _pickThumbnail() async {
+  try {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['png','jpg','jpeg', 'gif'],
+      withData:true,
+    );
+  
+    if( result == null) return; //사용자가 취소
+    final file = result.files.single;
+    final Uint8List? bytes = file.bytes;
+    //이미지 데이터는 보통 Uint8List로 다룬다. 
+
+    if(bytes ==null) 
+    {
+  
+      setState(() {
+        error_msg_ = "cannot read the thumbnail file! ㅜㅜ";
+      });
+      return;
+    }
+
+    // 1) NAS로 업로드(UploadService 사용) 
+    final uploadResult = await UploadService.uploadBytes(
+      bytes: bytes, 
+      filename: file.name
+      );
+
+      setState(() {
+        _thumbnail_rel_url = uploadResult.url;
+        _thumbnail_full_url = uploadResult.full_url;
+        error_msg_ = null;
+      });
+
+  } catch(e){
+    setState(() {
+      error_msg_ = 'Thumbnail upload error: $e';
+    });
+  }
+}
+
+
   Future<void> _savePost() async {
     setState(() {
       is_saving_ = true;
@@ -240,6 +293,7 @@ class _EditorPgState extends State<EditorPg> {
         body_markdown: body_ctrl_.text,
         tags: const ['flutter1', 'note'],  // TODO: 나중에 UI로
         category_slug: _selectedCategory?.slug,
+        thumbnail_rel_url: _thumbnail_rel_url,
       );
 
       if (!mounted) return;
@@ -371,7 +425,39 @@ class _EditorPgState extends State<EditorPg> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // ✅ 카테고리 선택 영역
+            /* 대표 섬네일 영역(새로추가)*/
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 120,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade400),
+                      color: Colors.grey.shade100,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: _thumbnail_full_url == null
+                      ? const Center(
+                        child: Text(
+                          'No thumnail',
+                          style: TextStyle(color: Colors.grey), 
+                        ),
+                        )
+                      : Image.network(
+                        _thumbnail_full_url!,
+                        fit: BoxFit.cover,
+                      )
+                  )),
+                  const SizedBox(width:8),
+                  IconButton(
+                    icon: const Icon(Icons.photo),
+                    tooltip: 'Pick thumbnail',
+                    onPressed:  _pickThumbnail,
+                  )
+              ]
+            ),
+            /* 카테고리 선택 영역*/
             Row(
               children: [
                 Expanded(
