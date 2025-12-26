@@ -1,0 +1,30 @@
+# ===== Flutter (app/) =====
+app/.dart_tool/
+app/build/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.metadata
+app/.idea/
+app/.vscode/
+
+# Optional: if you don't want platform folders tracked (보통은 추적 권장)
+# app/android/
+# app/ios/
+# app/web/
+# app/linux/
+# app/macos/
+# app/windows/
+
+# ===== Node (server/) =====
+server/node_modules/
+server/.env
+server/.env.*
+server/*.log
+server/logs/
+server/npm-debug.log*
+server/yarn-debug.log*
+server/yarn-error.log*
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
