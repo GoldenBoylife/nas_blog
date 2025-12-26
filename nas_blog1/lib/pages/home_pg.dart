@@ -5,8 +5,11 @@ import 'package:nas_blog1/pages/post_detail_pg.dart';
 import 'dart:convert';
 
 import '../models/post_meta.dart';
-import 'package:nas_blog1/config/config.dart';
+// import 'package:nas_blog1/config/config.dart';
+import '../services/post_service.dart';
+
 class HomePg extends StatefulWidget {
+  //StatefulWidget: 시간과 상태가 필요한 화면  상태에 따라 : 로딩중UI, 리스트UI, 애러 UI 
   const HomePg({super.key});
   
   @override
@@ -16,40 +19,24 @@ class HomePg extends StatefulWidget {
 class _HomePgState extends State<HomePg> {
 
   late Future<List<PostMeta>> _future_posts;
-  Future<List<PostMeta>> fetchPosts() async{
-
-  final res = await http.get(Uri.parse('$NAS_BASE_URL/api/posts'));
-
-  if(res.statusCode != 200) 
-  {
-    throw Exception('Faied to load posts1111');
-  }
-  else  
-    print("111\n");
-
-  final List<dynamic> data = json.decode(res.body);
-  //final : const, only one time input.
-  //dynamic : auto, any type,
-  return data.map((e) => PostMeta.fromJson(e)).toList();
-  //.toList() :  List<PostMeta>
-  //data안의 각각 e에 대하여 fromJson를 적용한 결과들을 나열한 스트림.
-  //Json -> map
-
-  }
+  //late : 당장 값이 없긴한데, 나중에 넣을거야. 
   
   @override
   void initState() {
     // TODO: implement initState
+    //initState () :  위젯이 화면에 붙을 때 딱 한번 실행되는 초기화 훅, 서버 요청 시작함.
     super.initState();
-    _future_posts = fetchPosts();
+    _future_posts = PostService.fetchPosts(); // 서비스 호출
+    //즉시 결과(List)를 주는 게 아니라 Future를 준다. 
 
   }
 
   @override
   Widget build(BuildContext context) {
+    //build : 현재 상태로 UI를 그리는 함수
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Posts'),
+        title: const Text('My Post list'),
       ),
       body: FutureBuilder<List<PostMeta>>(
         //FutureBuilder<List<PostMeta>> : 나중에 완료될 비동기 작업
@@ -66,6 +53,7 @@ class _HomePgState extends State<HomePg> {
             return const Center(child: Text('Error loading posts'));
           }
           final posts = snapshot.data!;
+          //! : snapshot.data의 타입이 nullable은 절대 아니야 
           /*data 없음 */
           if (posts.isEmpty) {
             return const Center(child : Text ('No posts yet'));

@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dropzone/flutter_dropzone.dart';
 
 import 'package:nas_blog1/config/config.dart';
+import 'package:nas_blog1/services/upload_service.dart';
+import 'package:nas_blog1/utils/markdown/markdown_insert.dart';
 import 'package:nas_blog1/utils/markdown/markdown_upload_service.dart';
 
 class DragDropUpload extends StatefulWidget {
@@ -42,16 +44,16 @@ class _DragDropUploadState extends State<DragDropUpload> {
       final Uint8List bytes = await _dzCtrl!.getFileData(event);
 
       // 1) 업로드
-      final relUrl = await MarkdownUploadService.uploadBytes(
+      final relUrl = await UploadService.uploadBytes(
         bytes: bytes,
         filename: name,
       );
-      final fullUrl = '$NAS_BASE_URL$relUrl';
+      final full_url = '$NAS_BASE_URL$relUrl';
 
       // 2) 마크다운 삽입
-      MarkdownUploadService.insertImageMarkdown(
+      MarkdownInsert.insertImageMarkdown(
         controller: widget.controller,
-        fullUrl: fullUrl,
+        full_url: full_url,
         alt: name,
       );
     } catch (e) {

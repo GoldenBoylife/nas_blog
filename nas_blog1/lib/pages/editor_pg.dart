@@ -6,27 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:nas_blog1/config/config.dart';
+import 'package:nas_blog1/services/upload_service.dart';
+import '../models/blog_category.dart';
+import '../services/post_service.dart';
+import '../services/category_service.dart';
+import '../utils/markdown/markdown_insert.dart';
 
-
-class BlogCategory{
-  final String id;
-  final String name;
-  final String slug;
-
-  BlogCategory({
-    required this.id,
-    required this.name,
-    required this.slug
-  });
-
-  factory BlogCategory.fromJson(Map<String, dynamic> j) {
-    return BlogCategory(
-      id: j['id'] as String,
-      name: j['name'] as String,
-      slug: (j['slug'] ?? j['name']) as String,
-    );
-  }
-}
 
 
 /// 이미지 삽입 옵션(크기/정렬 정보)
@@ -147,6 +132,8 @@ class _EditorPgState extends State<EditorPg> {
   List<BlogCategory> _categories = [];
   BlogCategory? _selectedCategory; //현재 선택된 카테고리
 
+
+
   @override
   void initState() {
     super.initState();
@@ -155,31 +142,24 @@ class _EditorPgState extends State<EditorPg> {
     is_saving_ = false;
 
     _fetchCategories(); //카테고리 로딩
+
   }
 
   Future<void> _fetchCategories() async {
     try {
-      final res = await http.get(Uri.parse('$NAS_BASE_URL/api/categories'));
+      // final res = await http.get(Uri.parse('$NAS_BASE_URL/api/categories'));
+      final cats = await CategoryService.fetchCategories();
 
-      if (res.statusCode == 200) {
-        final List<dynamic> list = json.decode(res.body) as List<dynamic>;
-        final cats = list
-            .map((e) => BlogCategory.fromJson(e as Map<String, dynamic>))
-            .toList();
 
         setState(() {
           _categories = cats;
           if (_categories.isNotEmpty && _selectedCategory == null) {
             _selectedCategory = _categories.first;
           }
+          error_msg_ = null;
         });
-      } else {
-        setState(() {
-          error_msg_ =
-              'Failed to load categories: ${res.statusCode} ${res.body}';
-        });
-      }
-    } catch (e) {
+      } 
+    catch (e) {
       setState(() {
         error_msg_ = 'Category load error: $e';
       });
@@ -222,20 +202,7 @@ class _EditorPgState extends State<EditorPg> {
     if (name == null || name.isEmpty) return;
 
     try {
-      final res = await http.post(
-        Uri.parse('$NAS_BASE_URL/api/categories'),
-        headers: {
-          'Content-Type': 'application/json',
-          'X-ADMIN-TOKEN': NAS_ADMIN_,
-        },
-        body: json.encode({'name': name}),
-      );
-
-      if (res.statusCode == 200) {
-        final Map<String, dynamic> jsonRes =
-            json.decode(res.body) as Map<String, dynamic>;
-        final cat =
-            BlogCategory.fromJson(jsonRes['category'] as Map<String, dynamic>);
+      final cat = await CategoryService.createCategory(name);
 
         setState(() {
           // 중복 방지
@@ -245,54 +212,41 @@ class _EditorPgState extends State<EditorPg> {
           _selectedCategory = cat;
           error_msg_ = null;
         });
-      } else {
-        setState(() {
-          error_msg_ =
-              'Create category failed: ${res.statusCode} ${res.body}';
-        });
-      }
-    } catch (e) {
+      } 
+     catch (e) {
       setState(() {
         error_msg_ = 'Create category error: $e';
       });
     }
   }
 
-  Future<void> savePost() async {
+  Future<void> _savePost() async {
     setState(() {
       is_saving_ = true;
       error_msg_ = null;
     });
 
-    final payload = {
-      "title": title_ctrl_.text,
-      "body_markdown": body_ctrl_.text,
-      "tags": ["flutter1", "note"], // TODO: 나중에 UI로 변경
-      "category": _selectedCategory?.slug,  // ✅ 서버 메타에 기록
+  //   final payload = {
+  //     "title": title_ctrl_.text,
+  //     "body_markdown": body_ctrl_.text,
+  //     "tags": ["flutter1", "note"], // TODO: 나중에 UI로 변경
+  //     "category": _selectedCategory?.slug,  // ✅ 서버 메타에 기록
 
-    };
+  //   };
 
-    try {
-      final res = await http.post(
-        Uri.parse('$NAS_BASE_URL/api/posts'),
-        headers: {
-          "Content-Type": "application/json",
-          "X-ADMIN-TOKEN": NAS_ADMIN_,
-        },
-        body: json.encode(payload),
+  try {
+      await PostService.createPost(
+        title: title_ctrl_.text,
+        body_markdown: body_ctrl_.text,
+        tags: const ['flutter1', 'note'],  // TODO: 나중에 UI로
+        category_slug: _selectedCategory?.slug,
       );
 
-      if (res.statusCode == 200) {
-        if (!mounted) return;
-        Navigator.pop(context, true);
-      } else {
-        setState(() {
-          error_msg_ = 'Save failed: ${res.statusCode} ${res.body}';
-        });
-      }
+      if (!mounted) return;
+      Navigator.pop(context, true); // 작성 완료 후 이전 화면으로
     } catch (e) {
       setState(() {
-        error_msg_ = 'Network error: $e';
+        error_msg_ = 'Save failed: $e';
       });
     } finally {
       if (mounted) {
@@ -323,47 +277,31 @@ class _EditorPgState extends State<EditorPg> {
         return;
       }
 
-      final uri = Uri.parse('$NAS_BASE_URL/api/upload');
+      // 1) NAS로 업로드
+      final upload_result = await UploadService.uploadBytes(bytes: bytes, filename: file.name);
+      final full_url = upload_result.full_url;
 
-      final req = http.MultipartRequest('POST', uri)
-        ..headers['X-ADMIN-TOKEN'] = NAS_ADMIN_
-        ..files.add(
-          http.MultipartFile.fromBytes(
-            'file',
-            bytes,
-            filename: file.name,
-          ),
-        );
 
-      final streamedRes = await req.send();
-      final resBody = await streamedRes.stream.bytesToString();
-
-      if (streamedRes.statusCode != 200) {
-        setState(() {
-          error_msg_ =
-              'Upload failed: HTTP ${streamedRes.statusCode} $resBody';
-        });
-        return;
-      }
-
-      final Map<String, dynamic> jsonRes = json.decode(resBody);
-      final String relUrl = jsonRes['url'] as String;
-      final String fullUrl = '$NAS_BASE_URL$relUrl';
-
-      // 옵션 다이얼로그
+      // 2) image option dialogue
       final opt = await showDialog<_ImageInsertOption>(
         context: context,
         builder: (_) => const _ImageOptionDialog(),
+        //(_): 함수에서 굳이 인자를 쓰지 않아서 _씀.
+        //원래는 context를 인자로 쓰는데, 내부에서 직접 자체 UI를 그리면 굳이 필요 없음. 
+        //써야할때는 화면 크기에 따라서 다르게 해야 할 때,
+
       );
-      if (opt == null) return;
+      if(opt == null) return;
+      final String alt = file.name.isNotEmpty ? file.name : 'image';
+      final title_meta = 'size=${opt.size};align=${opt.align}';
 
-      const String altBase = 'image';
-      final String alt = file.name.isNotEmpty ? file.name : altBase;
-
-      final titleMeta = 'size=${opt.size};align=${opt.align}';
-      final insertText = '\n![$alt]($fullUrl "$titleMeta")\n';
-
-      _insertAtCursor(insertText);
+      // 3) insert markdown 
+      MarkdownInsert.insertImageMarkdown(
+                      controller: body_ctrl_,
+                      full_url: full_url,
+                      alt:alt,
+                      title_meta: title_meta
+                      );
 
       setState(() {
         error_msg_ = null;
@@ -413,7 +351,7 @@ class _EditorPgState extends State<EditorPg> {
     final save_btn = is_saving_
         ? const CircularProgressIndicator()
         : ElevatedButton.icon(
-            onPressed: savePost,
+            onPressed: _savePost,
             icon: const Icon(Icons.save),
             label: const Text("Save to Nas1"),
           );

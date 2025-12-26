@@ -18,14 +18,16 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Flutter Demo1',
       theme: ThemeData(
+        useMaterial3: false,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+
         
       ),
       initialRoute:  '/',
       getPages: [
         GetPage(
           name:'/', page : () => const HomePg(),
-          transition: Transition.circularReveal,
+          transition: Transition.noTransition,
         )
 
       ]

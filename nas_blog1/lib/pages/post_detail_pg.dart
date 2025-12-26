@@ -1,13 +1,16 @@
-import 'dart:convert';  //json
+
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 
 
-import 'package:flutter_markdown/flutter_markdown.dart';
+
+
 import 'package:nas_blog1/config/config.dart';
 import 'package:nas_blog1/models/post_detail.dart';
+import '../services/post_service.dart';
+
+
 import 'package:nas_blog1/utils/markdown/markdown.dart';
 
 
@@ -30,24 +33,12 @@ class _PostDetailPgState extends State<PostDetailPg> {
   void initState() {
     super.initState();
     // _futurePostContent = fetchPostContent();
-    _future_post = _fetchPost();
+    _future_post = PostService.fetchPost(widget.post_id); //서비스 사용
 
   }
 
   /*Init Functions */
-  Future<PostDetail> _fetchPost() async{
-    final res = await http.get(Uri.parse('$NAS_BASE_URL/api/posts/${widget.post_id}'),  
-    //get
-  );
 
-  if(res.statusCode != 200) 
-  {
-    throw Exception('Failed to load post content');
-  }
-  final Map<String,dynamic> json_data = json.decode(res.body);
-  // return res.body; //not markdown. it is "JSON"
-  return PostDetail.fromJson(json_data);
-  }
 
   @override
   Widget build(BuildContext context) {
