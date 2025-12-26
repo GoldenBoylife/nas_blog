@@ -69,7 +69,7 @@ async function writeCategories(list) {
 // --- 빈 줄 ---
 // (여기부터 마크다운 본문)
 
-
+// Nas 서버(Node.js)에서 게시글 목록을 ㅁ나들어서 반환하기 위한 함수
 async function listPosts() {
   const files = await fs.readdir(POSTS_DIR);
   const posts = [];
@@ -87,13 +87,14 @@ async function listPosts() {
 
     const metaJsonStr = raw.substring(0, firstNewline).trim();
     try {
-      const meta = JSON.parse(metaJsonStr);
+      const meta = JSON.parse(metaJsonStr); //meta: 파싱한 결과 객체
       posts.push({
         id: meta.id,
         title: meta.title,
         created_at: meta.created_at,
         tags: meta.tags || [],
-                category: meta.category || null,  //new field
+        category: meta.category || null,  //new field
+        thumbnail: meta.thumbnail || null, 
       });
     } catch (e) {
       console.warn("failed to parse meta in", filename, e);
@@ -135,7 +136,7 @@ async function readPost(id) {
   };
 }
 
-async function writePost({ title, body_markdown, tags, category }) {
+async function writePost({ title, body_markdown, tags, category, thumbnail }) {
   const now = new Date().toISOString(); // "2025-11-01T13:45:00.123Z" 이런 식
   const id = uuidv4(); // 예: "2e2c1e73-..."
   const meta = {
@@ -143,8 +144,8 @@ async function writePost({ title, body_markdown, tags, category }) {
     title,
     created_at: now,
     tags: tags || [],
-        category: category || null,
-
+    category: category || null,
+    thumbnail: thumbnail || null, 
   };
 
   const fileContent = JSON.stringify(meta) + "\n" + body_markdown;
@@ -188,20 +189,26 @@ app.get("/api/posts/:id", async (req, res) => {
 });
 
 // 3) 글 작성(업로드) - 보호 필요!
+// thumbnail 받아서 넘기기
+// process
+// post publish in flutter client  -> store this contents using this "api" in server.
 app.post("/api/posts", async (req, res) => {
   try {
     // 아주 간단한 보안: 헤더 확인
     const token = req.header("X-ADMIN-TOKEN");
+    //관리자만 글 작성 가능하도록,
     if (token !== ADMIN_TOKEN) {
       return res.status(401).json({ error: "unauthorized" });
     }
 
-    const { title, body_markdown, tags, category } = req.body;
+    const { title, body_markdown, tags, category, thumbnail} = req.body;
     if (!title || !body_markdown) {
+      //필수 필드 검사
       return res.status(400).json({ error: "missing_fields" });
     }
 
-    const meta = await writePost({ title, body_markdown, tags, category });
+    const meta = await writePost({ title, body_markdown, tags, category, thumbnail });
+    //실제 저장 함수 호출
     res.json({ ok: true, post: meta });
   } catch (err) {
     console.error(err);

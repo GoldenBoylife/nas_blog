@@ -3,12 +3,16 @@ class PostMeta {
   final String title;
   final String created_at;
   final List<String> tags;
+  final String? category;
+  final String? thumbnail; //representive image
 
   PostMeta({
     required this.id,
     required this.title,
     required this.created_at,
-    required this.tags
+    required this.tags,
+    this.category,
+    this.thumbnail,
   });
 
 
@@ -20,6 +24,8 @@ factory PostMeta.fromJson(Map<String ,dynamic> json)
     title: json['title'],
     created_at: json['created_at'],
     tags: (json['tags'] as List<dynamic>).cast<String>(),
+    category: json['category'] as String? ?? null ,// 없으면 null
+    thumbnail: json['thumbnail']as String? ?? null
   );
 }
 }

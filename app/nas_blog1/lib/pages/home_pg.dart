@@ -5,7 +5,7 @@ import 'package:nas_blog1/pages/post_detail_pg.dart';
 import 'dart:convert';
 
 import '../models/post_meta.dart';
-// import 'package:nas_blog1/config/config.dart';
+import '../config/config.dart';
 import '../services/post_service.dart';
 
 class HomePg extends StatefulWidget {
@@ -30,6 +30,47 @@ class _HomePgState extends State<HomePg> {
     //즉시 결과(List)를 주는 게 아니라 Future를 준다. 
 
   }
+
+  /*funcs */
+  Widget _buildThumbnail(PostMeta p) {
+    if(p.thumbnail == null || p.thumbnail!.isEmpty) {
+      // ! : null이 아님을 보장하겠다는 뜻
+      return const CircleAvatar(
+        radius: 24, 
+        child: Icon(Icons.article),
+      );
+    }
+
+    /*상대경로 -> 절대 경로로 */
+    final thumb = p.thumbnail!; // non-null로 강제 보장함.
+    final url = thumb.startsWith('http') 
+          ? thumb
+          : '$NAS_BASE_URL$thumb';
+          
+
+    return  ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(
+        url,
+        width: 64,
+        height:64,
+        fit:BoxFit.cover,
+        errorBuilder: (_,__,___) {
+          //이미지 로딩이 실패했을때 보여지 콜백함수인데, 콜백함수가 받는 인자3개를 안쓰겠다는 뜻
+          return const SizedBox(
+            width: 64,
+            height: 64,
+            child: DecoratedBox(
+              decoration: BoxDecoration(color: Colors.grey),
+              child: Icon(Icons.broken_image, color: Colors.white),
+              ),
+            );
+          
+        }
+      ) 
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +105,8 @@ class _HomePgState extends State<HomePg> {
             itemBuilder: (context,index) {
               final p = posts[index];
               return ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                leading: _buildThumbnail(p),    //왼쪽 썸네일
                 title: Text(p.title),
                 subtitle: Text(p.created_at),
                 onTap: () {
