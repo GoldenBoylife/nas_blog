@@ -17,6 +17,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.13.0"
+  beamer:
+    dependency: "direct main"
+    description:
+      name: beamer
+      sha256: "4abb83a74f27c84fd0b59675eb0f6448f5e0c431f857bd2d0bc244c52b15893b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.7.0"
   boolean_selector:
     dependency: transitive
     description:
@@ -126,6 +134,11 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.0"
+  flutter_localizations:
+    dependency: "direct main"
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   flutter_markdown:
     dependency: "direct main"
     description:
@@ -176,6 +189,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  intl:
+    dependency: transitive
+    description:
+      name: intl
+      sha256: "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.20.2"
   leak_tracker:
     dependency: transitive
     description:

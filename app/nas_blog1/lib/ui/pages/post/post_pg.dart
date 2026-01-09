@@ -8,23 +8,23 @@ import 'package:flutter/material.dart';
 
 import 'package:nas_blog1/config/config.dart';
 import 'package:nas_blog1/models/post_detail.dart';
-import '../services/post_service.dart';
+import '../../../services/post_service.dart';
 
 
 import 'package:nas_blog1/utils/markdown/markdown.dart';
 
 
-class PostDetailPg extends StatefulWidget {
+class PostPg extends StatefulWidget {
   final String post_id;
 
-  const PostDetailPg({super.key, required this.post_id});
+  const PostPg({super.key, required this.post_id});
   //get the post_id , and then show the post detail.
 
   @override
-  State<PostDetailPg> createState() => _PostDetailPgState();
+  State<PostPg> createState() => _PostPgState();
 }
 
-class _PostDetailPgState extends State<PostDetailPg> {
+class _PostPgState extends State<PostPg> {
   // late Future<String> _futurePostContent;
   late Future<PostDetail> _future_post;
   //"_"prefix : private valiable

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:nas_blog1/pages/editor_pg.dart';
-import 'package:nas_blog1/pages/post_detail_pg.dart';
+import '../editor/editor_pg.dart';
+import '../post/post_pg.dart';
 import 'dart:convert';
 
-import '../models/post_meta.dart';
-import '../config/config.dart';
-import '../services/post_service.dart';
+import '../../../models/post_meta.dart';
+import '../../../config/config.dart';
+import '../../../services/post_service.dart';
 
 class HomePg extends StatefulWidget {
   //StatefulWidget: 시간과 상태가 필요한 화면  상태에 따라 : 로딩중UI, 리스트UI, 애러 UI 
@@ -28,7 +28,6 @@ class _HomePgState extends State<HomePg> {
     super.initState();
     _future_posts = PostService.fetchPosts(); // 서비스 호출
     //즉시 결과(List)를 주는 게 아니라 Future를 준다. 
-
   }
 
   /*funcs */
@@ -113,7 +112,7 @@ class _HomePgState extends State<HomePg> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => PostDetailPg(
+                      builder: (_) => PostPg(
                         post_id: p.id),
                     )
                   );
