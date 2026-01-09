@@ -9,7 +9,8 @@ class CustomScrollBehavior extends MaterialScrollBehavior{
 
   /*touch or mouse 가능한 기기는 drag 가능하도록 override*/
   //허용 가능한 입력장치 목록,
-  //Set : 중복을 허용하지 않는 컬렉션
+  //Set : 중복을 허용하지 않는 컬렉션,
+  //컬렉션 : c++의 컨테이너 개념
   Set<PointerDeviceKind> get dragDevices => 
   {
     PointerDeviceKind.touch, //터지 가능한 디바이스

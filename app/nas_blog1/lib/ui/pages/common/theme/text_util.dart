@@ -69,6 +69,7 @@ class TextUtil {
   /// fontSize = 12
   static TextStyle get12(BuildContext context, Color color, {FontWeight font_weight = FontWeight.w500}) {
     return Theme.of(context).textTheme.labelMedium!.copyWith(
+      //labelMedium 자체가 fontSize 12다.
       color: color,
       fontWeight: font_weight);
   }
@@ -98,7 +99,7 @@ class TextUtil {
 
 
   // static TextTheme setTextTheme() {
-  TextTheme setTextTheme() {
+  static TextTheme setTextTheme() {
     return const TextTheme(
       headlineLarge: TextStyle(
         fontSize: 32,
