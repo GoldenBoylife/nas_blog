@@ -15,6 +15,7 @@ import 'package:nas_blog1/ui/pages/common/widgets/sidebar/category_sidebar.dart'
 
 import 'package:nas_blog1/ui/pages/editor/editor_pg.dart';
 import 'package:nas_blog1/ui/pages/post/post_pg.dart';
+import 'package:nas_blog1/ui/pages/home/widgets/post_card.dart';
 
 
 class HomePg extends StatefulWidget {
@@ -190,10 +191,9 @@ class _HomePgState extends State<HomePg> {
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: cross,
         //화면 너비에 따라서 한줄에 보여줄 카드의 갯수 정함
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        mainAxisExtent: 112, //카드 높이 고정(110~120 정도)
-        childAspectRatio: 3.0 // 카드 가로로 넓게
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        mainAxisExtent: 270, //카드 높이 고정(썸네일 150 + 아래영역)
         
         ),
 
@@ -201,84 +201,17 @@ class _HomePgState extends State<HomePg> {
       // separatorBuilder: (_,__) => const Divider(height :1), 
       itemBuilder: (context, index) {
         final p = filtered[index];
-        return InkWell(
+        return PostCard(
+          post: p,
           //기존 ListTile은 빠르게 리스트 만들기 위한 거고, 
           //이 InkWell은 터치 효과, 클릭 처리를 위한 것이다. 
           //이제 inpa처럼  썸네일 크기, 카드를 직접 제작하기위해서 이걸로 바꿈. 
-          onTap: () {
+          on_tap: () {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => PostPg(post_id : p.id))
             );
           },
-          child: SizedBox(
-            height: 110,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 110), 
-              //졸라 쫍은 화면 폭일때, 텍스트가 늘어나면 알아서카드가 커짐.
-              child: Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  //회색 테두리, 둥글게, 그림자 스타일
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.grey.withOpacity(0.2)),
-              
-                ),
-                child: Row(
-                  //썸네일, 간격, 오른쪽 글 부분
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left:6.0),
-                      child: _buildThumbnail(p),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            p.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            // style: const TextStyle(fontWeight: FontWeight.w700),
-                            style:  TextUtil.get16(context, Colors.black, font_weight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            p.created_at,
-                            maxLines:1,
-                            overflow: TextOverflow.ellipsis,
-                            //좁으면, 생성날짜(created_at)이 여러줄로 됨. 
-                            style: TextUtil.get12(context, Colors.grey.shade700),
-                          ),
-                          const SizedBox(height: 6),
-
-                          if( show_chip && p.category != null && p.category!.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration:  BoxDecoration(
-                                color: Colors.black.withOpacity(0.06),
-                                borderRadius: BorderRadius.circular(99),
-                              ),
-                            /*category chip을 조건부로 한줄만  */
-                              child: Text(
-                                p.category!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextUtil.get12(context, Colors.black)
-              
-                              )
-                           )
-                        ]
-                      )
-                    )
-                  ]
-                ),
-              ),
-            ),
-          ),
         );
       }
       
