@@ -14,6 +14,7 @@ import 'package:nas_blog1/ui/pages/common/widgets/pageWidget/common_scaffold.dar
 import 'package:nas_blog1/ui/pages/common/widgets/sidebar/category_sidebar.dart';
 
 import 'package:nas_blog1/ui/pages/editor/editor_pg.dart';
+import 'package:nas_blog1/ui/pages/home/widgets/home_hero.dart';
 import 'package:nas_blog1/ui/pages/post/post_pg.dart';
 import 'package:nas_blog1/ui/pages/home/widgets/post_card.dart';
 
@@ -145,7 +146,7 @@ class _HomePgState extends State<HomePg> {
 
         return Container(
           width: 56, 
-          height: 56,
+          height: 56, 
           padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
             color: Colors.white,  //썸네일 배경
@@ -157,8 +158,6 @@ class _HomePgState extends State<HomePg> {
             child: thumb_widget
           )
         );
-          
-        
   }
 
   /*UI helpers 
@@ -209,7 +208,9 @@ class _HomePgState extends State<HomePg> {
           on_tap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => PostPg(post_id : p.id))
+              MaterialPageRoute(
+                builder: (_) => PostPg(post_id : p.id)
+                )
             );
           },
         );
@@ -295,6 +296,8 @@ class _HomePgState extends State<HomePg> {
         child: Column(
           crossAxisAlignment:  CrossAxisAlignment.stretch,
           children: [
+            
+
             Text('Category load error:\n$_cats_error'),
             const SizedBox(height: 12),
             ElevatedButton(
@@ -325,7 +328,10 @@ class _HomePgState extends State<HomePg> {
           black: false, //일단 밝게 (원하면 true)
           children : [
             /*상단에 제목/설명 넣고 싶으면 여기 추가 */
-            const SizedBox(height: 12),
+
+                // ✅ 히어로는 여기!
+            HomeHero(screen_model: screen_model),
+            const SizedBox(height: 18),
             _BuildMainContentExpanded(),
             const SizedBox(height: 24),
 
