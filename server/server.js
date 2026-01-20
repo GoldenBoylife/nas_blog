@@ -240,7 +240,8 @@ app.post("/api/categories", async (req, res) => {
       return res.status(401).json({ error: "unauthorized" });
     }
 
-    const nameRaw = (req.body.name || "").trim();
+    const {name,parent_id = null} = req.body;
+    const nameRaw = (name || "").trim();
     if (!nameRaw) {
       return res.status(400).json({ error: "name_required" });
     }
@@ -267,6 +268,7 @@ app.post("/api/categories", async (req, res) => {
       id: uuidv4(),
       name: nameRaw,
       slug,
+      parent_id
     };
 
     cats.push(cat);
