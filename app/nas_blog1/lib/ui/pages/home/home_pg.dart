@@ -1,5 +1,6 @@
 
 import 'dart:async';
+import 'package:beamer/beamer.dart';
 import 'package:flutter/material.dart';
 import 'package:nas_blog1/config/config.dart';
 import 'package:nas_blog1/models/blog_category.dart';
@@ -7,16 +8,18 @@ import 'package:nas_blog1/models/post_meta.dart';
 import 'package:nas_blog1/models/screen_model.dart';
 
 import 'package:nas_blog1/services/category_service.dart';
+import 'package:nas_blog1/services/category_tree_builder.dart';
 import 'package:nas_blog1/services/post_service.dart';
 import 'package:nas_blog1/ui/pages/common/theme/text_util.dart';
 
 import 'package:nas_blog1/ui/pages/common/widgets/pageWidget/common_scaffold.dart';
+import 'package:nas_blog1/ui/pages/common/widgets/post/post_grid.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/sidebar/category_sidebar.dart';
 
 import 'package:nas_blog1/ui/pages/editor/editor_pg.dart';
-import 'package:nas_blog1/ui/pages/home/widgets/home_hero.dart';
+import 'package:nas_blog1/ui/pages/common/widgets/page_hero/page_hero.dart';
 import 'package:nas_blog1/ui/pages/post/post_pg.dart';
-import 'package:nas_blog1/ui/pages/home/widgets/post_card.dart';
+import 'package:nas_blog1/ui/pages/common/widgets/post/post_card.dart';
 
 
 class HomePg extends StatefulWidget {
@@ -29,7 +32,8 @@ class HomePg extends StatefulWidget {
 class _HomePgState extends State<HomePg> {
 
   /* data */
-  List<BlogCategory> _categories = [];
+  List<BlogCategory> _category_tree = [];
+  List<BlogCategory> _categories= [];
   String? _selected_slug; //null이면 All
 
 
@@ -50,19 +54,22 @@ class _HomePgState extends State<HomePg> {
   /*functions */
     /*카테고리 목록을 NAS에서 다시 받아와서 화면 상태를 업뎃함 */
   Future<void>  _fetchCategories() async{
-    setState(() {
-      _cats_loading = true;
-      _cats_error = null;
-    });
+    
+    // setState(() {
+    //   _cats_loading = true;
+    //   _cats_error = null;
+    // });
     try {
-      final cats = await CategoryService.fetchCategories();
+      final flat = await CategoryService.fetchCategories();
+      final tree  =  CategoryTreeBuilder.build(flat);
       //서버에서 받아옴.
       if(!mounted) return;
       //await하는 동안 화면이 사라질수 있으니, 안전장치
 
       /*받아온 상태로 업데이트 진행 */
       setState(() {
-        _categories = cats;
+        _category_tree = tree;
+        // _categories = cats;
         _cats_loading = false;
 
         /*선택된 slug가 더이상 없으면 All로 */
@@ -220,6 +227,7 @@ class _HomePgState extends State<HomePg> {
     );
   }
 
+  /*slug 조건에 맞는 액자들만 골라서 PostGrid 벽 가장자리에 걸어둔다.  */
   Widget _BuildMainContentExpanded() {
     /*CommondScaffold는 body를 SingleChildScrollView로 감싸고 있어서,
     여기서는 스크롤 가능한 리스트를 만들어 놓으면 Nested scroll이 꼬일 수 있음. 
@@ -241,6 +249,7 @@ class _HomePgState extends State<HomePg> {
     return Expanded(
       //Expanded : 남는 공간을 꽉 채워라. Row, Column같은 Flex 레이아웃에서만 의미가 있음. 
       child: FutureBuilder<List<PostMeta>> (
+        //FutureBuilder : 비동기 작업의 상태에 따라서 UI를 갈아 끼워줌. 
         future: _future_posts,
         builder: (context,snap) {
           if(snap.connectionState == ConnectionState.waiting) {
@@ -252,7 +261,19 @@ class _HomePgState extends State<HomePg> {
           
           }
           final posts = snap.data!;
-          return  _buildPostsGrid(snap.data!);
+          //홈은 "All"이면 전체, 아니면 필터된 목록
+          final filtered = (_selected_slug ==null)
+                ? posts 
+                : posts.where((p) => p.category == _selected_slug).toList();
+          return  PostGrid(
+            posts: filtered,
+            on_tap: (p) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => PostPg(post_id: p.id)),
+              );
+            }
+          );
           
         }
       
@@ -310,9 +331,17 @@ class _HomePgState extends State<HomePg> {
       );
     } else {
       side_bar = CategorySidebar(
-        categories: _categories, 
+        categories: _category_tree, 
+        // categories: _categories,  //직전
         selected_slug: _selected_slug, 
-        on_select: _onSelectCategory,
+        // selected_slug: null,   //직전
+        // on_select: _onSelectCategory,
+        on_navigate: (slug) {
+          if(slug ==null)
+            Beamer.of(context).beamToNamed('/');
+          else 
+            Beamer.of(context).beamToNamed('/category/$slug');
+        },
         on_refresh_requested: _fetchCategories,
         );
     }
@@ -329,10 +358,11 @@ class _HomePgState extends State<HomePg> {
           children : [
             /*상단에 제목/설명 넣고 싶으면 여기 추가 */
 
-                // ✅ 히어로는 여기!
-            HomeHero(screen_model: screen_model),
+                //히어로는 여기!
+            PageHero(screen_model: screen_model),
             const SizedBox(height: 18),
             _BuildMainContentExpanded(),
+            //PostGrid와 PostCard가 여기서 뜬다. 
             const SizedBox(height: 24),
 
           ],

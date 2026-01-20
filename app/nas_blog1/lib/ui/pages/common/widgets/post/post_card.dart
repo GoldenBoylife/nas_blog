@@ -1,3 +1,5 @@
+/*post card 한개를 다룰 때 씀.  */
+// post gird는 post card 여러개를 다룸.
 import 'package:flutter/material.dart';
 import 'package:nas_blog1/config/config.dart';
 import 'package:nas_blog1/models/post_meta.dart';

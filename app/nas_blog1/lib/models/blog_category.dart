@@ -2,13 +2,29 @@ class BlogCategory{
   final String id;
   final String name;
   final String slug;
+  final String? parent_id;
+  final List<BlogCategory> children;
   //String : null불가, String? null가능
 
   BlogCategory({
     required this.id,
     required this.name,
-    required this.slug
+    required this.slug,
+    this.parent_id,
+    this.children  = const [],
   });
+
+  BlogCategory copyWith({
+    List<BlogCategory>? children,
+  }) {
+    return BlogCategory(
+      id: id, 
+      name: name, 
+      slug: slug,
+      parent_id : parent_id,
+      children: children ?? this.children,
+      );
+  }
 
   factory BlogCategory.fromJson(Map<String, dynamic> j) {
   //정적 생성 함수
@@ -17,6 +33,7 @@ class BlogCategory{
       id: j['id'] as String,
       name: j['name'] as String,
       slug: (j['slug'] ?? j['name']) as String,
+      parent_id: j['parent_id']  //여긴 String으로 하면 서버쪽에서 parent_id없을때 crash생김
     );
   }
 }

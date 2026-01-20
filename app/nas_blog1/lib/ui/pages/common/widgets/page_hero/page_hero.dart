@@ -1,3 +1,6 @@
+/*hero쪽은 서버나 저장소에서데이터를 가져오기(fetch) 하지 않는다.  */
+// 바로 assets쪽에 잇는 gif쓴다. 
+
 import 'package:flutter/material.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:nas_blog1/models/screen_model.dart';
@@ -5,14 +8,16 @@ import 'package:nas_blog1/models/screen_model.dart';
 import 'package:nas_blog1/constants/asset_path.dart';
 import 'package:nas_blog1/ui/pages/common/theme/text_util.dart';
 
-class HomeHero extends StatelessWidget {
+
+
+class PageHero extends StatelessWidget {
     final ScreenModel screen_model;
 
     final String title;
     final String sub_title;
     final List<String> words;
 
-  const HomeHero({
+  const PageHero({
     super.key,
     required this.screen_model,
     this.title = "Dr.GoldenBoy Lab",
@@ -67,8 +72,8 @@ class HomeHero extends StatelessWidget {
                     const DecoratedBox(
                         decoration: BoxDecoration(
                             gradient: LinearGradient(
-                                begin: AlignmentGeometry.topCenter,
-                                end: AlignmentGeometry.bottomCenter,
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
                                 colors: [
                                     Color(0xAA000000),
                                     Color(0x55000000),
@@ -124,7 +129,7 @@ class HomeHero extends StatelessWidget {
                                                             (w) => TypewriterAnimatedText(
                                                                 w, 
                                                                 speed: const Duration(milliseconds: 110),
-                                                                cursor: '_',
+                                                                // cursor: '_',
                                                             ),
                                                         ).toList(),
                                                 )

@@ -1,5 +1,11 @@
 /*this class is responsible only for Purely managing category HTTP, like "PostService" */
+/*
+func
+  1. req http 
+  2. parsing JSON
+  3. 인증 header
 
+ */
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
