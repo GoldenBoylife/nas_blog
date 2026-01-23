@@ -18,7 +18,8 @@ class CommonScaffoldDesktop extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool show_sidebar = (side_bar != null);
-    
+    const double gap = 16;
+
     return Scaffold(
       body: Column(
         children: [
@@ -31,6 +32,13 @@ class CommonScaffoldDesktop extends StatelessWidget {
                   width: side_bar_width,
                   child: side_bar!,
                 ),
+                const SizedBox(width: gap),
+                //side바 최외곽 gap
+
+                Container(width: 1, color: Colors.black12),
+                //side바 최와곽 윤곽선
+                const SizedBox(width: gap),
+                
                 Expanded(child: content),
               ]
             )

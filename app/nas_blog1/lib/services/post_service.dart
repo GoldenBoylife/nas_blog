@@ -14,6 +14,7 @@ import 'package:nas_blog1/config/config.dart';
 
 import 'package:nas_blog1/models/post_detail.dart';
 import 'package:nas_blog1/models/post_meta.dart';
+import 'package:nas_blog1/models/post_status.dart';
 
 
 
@@ -30,6 +31,7 @@ class PostService{
   /*funcs*/
   static Future<List<PostMeta>> fetchPosts() async 
   {
+  //static : 외부에서 쓰더라도 객체 없이 쓰게 만듬. c++에서도 마찬가지 개념
   //Future<T> : 지금 당장은 <T>없고, 나중에 완료되면 그걸 주는 약속(핸들)
   //async : 비동기함수됨. 내부에서 await쓸수 있고, 자동으로 결과가 Future<T>로 감싸져서 반환됨. 
 
@@ -88,7 +90,9 @@ class PostService{
     String? category_slug,
     //? nullable 타입, String또는 null일수도 있다.
     //여기에다가 thumnail추가하기.
-    String? thumbnail_rel_url, //서버쪽에다가는 상대경로만 보낼 것
+    String? thumbnail_rel_url, //서버쪽에다가는 상대경로만 보낼 것\
+
+    PostStatus? status,
   }) async{
     //서버로 보낼 JSON payload
     final payload = <String, dynamic> {
@@ -97,6 +101,8 @@ class PostService{
       'tags': tags,
       if( category_slug != null) 'category': category_slug,
       if( thumbnail_rel_url !=null) 'thumbnail': thumbnail_rel_url,
+      if(status != null) 'status': status.value
+      //이 함수 쓰인 곳에서 status값을 넣었으면 null아닐것임. 그값을 payload 문자열에 적용해줌.
     };
 
     final res = await http.post(

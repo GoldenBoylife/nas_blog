@@ -1,123 +1,34 @@
-import 'dart:convert';
+/*상태 + 이벤트 + 레이아웃만 */
+
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-
-import '../../../config/config.dart';
-import 'package:nas_blog1/config/config.dart';
+import 'package:nas_blog1/models/screen_model.dart';
 import 'package:nas_blog1/services/upload_service.dart';
 import 'package:nas_blog1/models/blog_category.dart';
 import 'package:nas_blog1/services/post_service.dart';
 import 'package:nas_blog1/services/category_service.dart';
+import 'package:nas_blog1/ui/pages/editor/editor_center.dart';
 import 'package:nas_blog1/utils/markdown/markdown_insert.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+
+import '../../../models/post_status.dart';
+
+import 'dialogs/image_option_dialog.dart';
+import 'dialogs/preview_dialog.dart';
+
+import 'widgets/editor_appbar.dart';
+import 'widgets/editor_tools_panel.dart';
+import 'widgets/publish_tools_panel.dart';
 
 
-
-/// 이미지 삽입 옵션(크기/정렬 정보)
-class _ImageInsertOption {
-  final String size;   // small, medium, large, full
-  final String align;  // left, center, right
-
-  _ImageInsertOption({
-    required this.size,
-    required this.align,
-  });
-}
-
-/// 옵션 선택 다이얼로그 (크기/정렬 선택)
-class _ImageOptionDialog extends StatefulWidget {
-  const _ImageOptionDialog({super.key});
-
-  @override
-  State<_ImageOptionDialog> createState() => _ImageOptionDialogState();
-}
-
-class _ImageOptionDialogState extends State<_ImageOptionDialog> {
-  String _size = 'medium';
-  String _align = 'center';
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Image option'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('Size'),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [
-              ChoiceChip(
-                label: const Text('Small'),
-                selected: _size == 'small',
-                onSelected: (_) => setState(() => _size = 'small'),
-              ),
-              ChoiceChip(
-                label: const Text('Medium'),
-                selected: _size == 'medium',
-                onSelected: (_) => setState(() => _size = 'medium'),
-              ),
-              ChoiceChip(
-                label: const Text('Large'),
-                selected: _size == 'large',
-                onSelected: (_) => setState(() => _size = 'large'),
-              ),
-              ChoiceChip(
-                label: const Text('Full'),
-                selected: _size == 'full',
-                onSelected: (_) => setState(() => _size = 'full'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text('Align'),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [
-              ChoiceChip(
-                label: const Text('Left'),
-                selected: _align == 'left',
-                onSelected: (_) => setState(() => _align = 'left'),
-              ),
-              ChoiceChip(
-                label: const Text('Center'),
-                selected: _align == 'center',
-                onSelected: (_) => setState(() => _align = 'center'),
-              ),
-              ChoiceChip(
-                label: const Text('Right'),
-                selected: _align == 'right',
-                onSelected: (_) => setState(() => _align = 'right'),
-              ),
-            ],
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop<_ImageInsertOption>(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.pop(
-              context,
-              _ImageInsertOption(size: _size, align: _align),
-            );
-          },
-          child: const Text('OK'),
-        ),
-      ],
-    );
-  }
-}
-
-
-
+/// EditorPg
+/// purpose
+/// input
+/// how it works
+/// 
 class EditorPg extends StatefulWidget {
   const EditorPg({super.key});
 
@@ -125,412 +36,391 @@ class EditorPg extends StatefulWidget {
   State<EditorPg> createState() => _EditorPgState();
 }
 
-
-
 class _EditorPgState extends State<EditorPg> {
-  late final TextEditingController title_ctrl_;
-  late final TextEditingController body_ctrl_;
+  late final TextEditingController _title_ctrl;
+  late final TextEditingController _body_ctrl;
 
-  late bool is_saving_;
-  String? error_msg_;
-  String? _thumbnail_rel_url; //상대 경로 /assets/uuid.png
-  String? _thumbnail_full_url; //미리 보기용 full url 
+  bool _is_saving = false;
+  String? _error_msg;
 
+  String? _thumbnail_rel_url;
+  String? _thumbnail_full_url;
 
-  List<BlogCategory> _categories = [];
-  BlogCategory? _selectedCategory; //현재 선택된 카테고리
+  List<BlogCategory> _categories_flat = [];
+  String? _selected_category_slug;
+  //null일수도 있음. 
 
+  PostStatus _status = PostStatus.public;
 
-
-  @override
+@override
   void initState() {
+    // TODO: implement initState
     super.initState();
-    title_ctrl_ = TextEditingController();
-    body_ctrl_ = TextEditingController();
-    is_saving_ = false;
-
-    _fetchCategories(); //카테고리 로딩
-
-  }
-
-/*funcs */
-
-
-  Future<void> _fetchCategories() async {
-    try {
-      // final res = await http.get(Uri.parse('$NAS_BASE_URL/api/categories'));
-      final cats = await CategoryService.fetchCategories();
-
-
-        setState(() {
-          _categories = cats;
-          if (_categories.isNotEmpty && _selectedCategory == null) {
-            _selectedCategory = _categories.first;
-          }
-          error_msg_ = null;
-        });
-      } 
-    catch (e) {
-      setState(() {
-        error_msg_ = 'Category load error: $e';
-      });
-    }
-  }
-
-
-  /*새 카테고리 추가 다이얼로그 */
-  Future<void> _addCategoryDialog() async {
-    final ctrl = TextEditingController();
-
-    final String? name = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('New category'),
-          content: TextField(
-            controller: ctrl,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Category name',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context, ctrl.text.trim());
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (name == null || name.isEmpty) return;
-
-    try {
-      final cat = await CategoryService.createCategory(name);
-
-        setState(() {
-          // 중복 방지
-          if (_categories.indexWhere((c) => c.id == cat.id) < 0) {
-            _categories.add(cat);
-          }
-          _selectedCategory = cat;
-          error_msg_ = null;
-        });
-      } 
-     catch (e) {
-      setState(() {
-        error_msg_ = 'Create category error: $e';
-      });
-    }
-  }
-
-  
-Future<void> _pickThumbnail() async {
-  try {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['png','jpg','jpeg', 'gif'],
-      withData:true,
-    );
-  
-    if( result == null) return; //사용자가 취소
-    final file = result.files.single;
-    final Uint8List? bytes = file.bytes;
-    //이미지 데이터는 보통 Uint8List로 다룬다. 
-
-    if(bytes ==null) 
-    {
-  
-      setState(() {
-        error_msg_ = "cannot read the thumbnail file! ㅜㅜ";
-      });
-      return;
-    }
-
-    // 1) NAS로 업로드(UploadService 사용) 
-    final uploadResult = await UploadService.uploadBytes(
-      bytes: bytes, 
-      filename: file.name
-      );
-
-      setState(() {
-        _thumbnail_rel_url = uploadResult.url;
-        _thumbnail_full_url = uploadResult.full_url;
-        error_msg_ = null;
-      });
-
-  } catch(e){
-    setState(() {
-      error_msg_ = 'Thumbnail upload error: $e';
-    });
-  }
-}
-
-
-  Future<void> _savePost() async {
-    setState(() {
-      is_saving_ = true;
-      error_msg_ = null;
-    });
-
-  //   final payload = {
-  //     "title": title_ctrl_.text,
-  //     "body_markdown": body_ctrl_.text,
-  //     "tags": ["flutter1", "note"], // TODO: 나중에 UI로 변경
-  //     "category": _selectedCategory?.slug,  // ✅ 서버 메타에 기록
-
-  //   };
-
-  try {
-      await PostService.createPost(
-        title: title_ctrl_.text,
-        body_markdown: body_ctrl_.text,
-        tags: const ['flutter1', 'note'],  // TODO: 나중에 UI로
-        category_slug: _selectedCategory?.slug,
-        thumbnail_rel_url: _thumbnail_rel_url,
-      );
-
-      if (!mounted) return;
-      Navigator.pop(context, true); // 작성 완료 후 이전 화면으로
-    } catch (e) {
-      setState(() {
-        error_msg_ = 'Save failed: $e';
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          is_saving_ = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _pickAndUploadImage() async {
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['png', 'jpg', 'jpeg', 'gif', 'mp4', 'mov'],
-        withData: true,
-      );
-
-      if (result == null) return; // cancel
-
-      final file = result.files.single;
-      final Uint8List? bytes = file.bytes;
-
-      if (bytes == null) {
-        setState(() {
-          error_msg_ = '파일 데이터를 읽을 수 없습니다.';
-        });
-        return;
-      }
-
-      // 1) NAS로 업로드
-      final upload_result = await UploadService.uploadBytes(bytes: bytes, filename: file.name);
-      final full_url = upload_result.full_url;
-
-
-      // 2) image option dialogue
-      final opt = await showDialog<_ImageInsertOption>(
-        context: context,
-        builder: (_) => const _ImageOptionDialog(),
-        //(_): 함수에서 굳이 인자를 쓰지 않아서 _씀.
-        //원래는 context를 인자로 쓰는데, 내부에서 직접 자체 UI를 그리면 굳이 필요 없음. 
-        //써야할때는 화면 크기에 따라서 다르게 해야 할 때,
-
-      );
-      if(opt == null) return;
-      final String alt = file.name.isNotEmpty ? file.name : 'image';
-      final title_meta = 'size=${opt.size};align=${opt.align}';
-
-      // 3) insert markdown 
-      MarkdownInsert.insertImageMarkdown(
-                      controller: body_ctrl_,
-                      full_url: full_url,
-                      alt:alt,
-                      title_meta: title_meta
-                      );
-
-      setState(() {
-        error_msg_ = null;
-      });
-    } catch (e) {
-      setState(() {
-        error_msg_ = 'Upload error: $e';
-      });
-    }
-  }
-
-  void _insertAtCursor(String text) {
-    final value = body_ctrl_.value;
-    final selection = value.selection;
-
-    if (!selection.isValid) {
-      // 커서 정보가 없으면 맨 뒤에 추가
-      body_ctrl_.value = value.copyWith(
-        text: value.text + text,
-        selection:
-            TextSelection.collapsed(offset: (value.text + text).length),
-      );
-      return;
-    }
-
-    final newText = value.text.replaceRange(
-      selection.start,
-      selection.end,
-      text,
-    );
-    final newSelectionPos = selection.start + text.length;
-
-    body_ctrl_.value = value.copyWith(
-      text: newText,
-      selection: TextSelection.collapsed(offset: newSelectionPos),
-    );
+    _title_ctrl = TextEditingController();
+    _body_ctrl = TextEditingController();
+    _fetchCategories();
   }
 
   @override
   void dispose() {
-    title_ctrl_.dispose();
-    body_ctrl_.dispose();
+    // TODO: implement dispose
+    _title_ctrl.dispose();
+    _body_ctrl.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
-    final save_btn = is_saving_
-        ? const CircularProgressIndicator()
-        : ElevatedButton.icon(
-            onPressed: _savePost,
-            icon: const Icon(Icons.save),
-            label: const Text("Save to Nas1"),
-          );
-
+    // final screen_model = _calcScreenModel(context);
+    final screen_model = ScreenModel.of(context);
+    final Widget editor_center = EditorCenter(
+                                  title_ctrl: _title_ctrl,
+                                  body_ctrl: _body_ctrl,
+                                  error_msg: _error_msg
+                              );
+    final Widget public_tools_panel =  PublishToolsPanel(
+                                          thumbnail_full_url: _thumbnail_full_url,
+                                          on_pick_thumbnail: _onPickThumbnail, 
+                                          on_remove_thumbnail: _onRemoveThumbnail, 
+                                          status: _status, 
+                                          on_change_status: _onChangeStatus,
+                                          categories_flat: _categories_flat, 
+                                          selected_category_slug: _selected_category_slug, 
+                                          on_select_category: _onSelectCategory, 
+                                          on_add_category: _onAddCategoryDialog);
+    
+    final padding = _calcPadding(screen_model);
+    final gap = _calcGap(screen_model);
+    
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('New Post'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.image),
-            tooltip: 'Insert image',
-            onPressed: _pickAndUploadImage,
-          ),
-        ],
+      appBar: EditorAppBar(
+        is_saving: _is_saving,
+        on_preview: _openPreview,
+        on_save: _savePost,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            /* 대표 섬네일 영역(새로추가)*/
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 120,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade400),
-                      color: Colors.grey.shade100,
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: _thumbnail_full_url == null
-                      ? const Center(
-                        child: Text(
-                          'No thumnail',
-                          style: TextStyle(color: Colors.grey), 
-                        ),
-                        )
-                      : Image.network(
-                        _thumbnail_full_url!,
-                        fit: BoxFit.cover,
-                      )
-                  )),
-                  const SizedBox(width:8),
-                  IconButton(
-                    icon: const Icon(Icons.photo),
-                    tooltip: 'Pick thumbnail',
-                    onPressed:  _pickThumbnail,
-                  )
-              ]
-            ),
-            /* 카테고리 선택 영역*/
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<BlogCategory>(
-                    value: _selectedCategory,
-                    isExpanded: true,
-                    items: _categories
-                        .map(
-                          (c) => DropdownMenuItem<BlogCategory>(
-                            value: c,
-                            child: Text(c.name),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (cat) {
-                      setState(() {
-                        _selectedCategory = cat;
-                      });
-                    },
-                    decoration: const InputDecoration(
-                      labelText: 'Category',
-                      border: OutlineInputBorder(),
-                    ),
+      body: LayoutBuilder(
+        //LayoutBuilder : 공간 제약을 런타임에 받아서 그 값에 따라 다른 레이아웃 선택하게 해줌.
+        builder: (context,c) {          
+          if(screen_model.web) {
+            return  Padding(
+              padding:  EdgeInsets.all(padding),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(
+                    width: 220, 
+                    child: EditorToolsPanel(
+                      on_insert_image: _insertMediaIntoMarkdown,
+                      on_insert_video: _insertMediaIntoMarkdown,
+                    )
                   ),
+                  SizedBox(width: gap),
+                  Expanded(child: editor_center),
+                  SizedBox(width: gap),
+                  SizedBox(
+                    width: 320,
+                    child: public_tools_panel
+                  )
+                ]
+              )
+            );
+          }
+          /* mobile /tablet */
+          return Padding(
+            padding: EdgeInsets.all(padding),
+            child: Column( //길게. 
+              children: [
+                EditorToolsPanel(
+                  on_insert_image: _insertMediaIntoMarkdown, 
+                  on_insert_video: _insertMediaIntoMarkdown
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  tooltip: 'Add category',
-                  onPressed: _addCategoryDialog,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
+                SizedBox(height:gap),
+                Expanded(child: editor_center),
+                SizedBox(height:gap),
+                if(screen_model.tablet) 
+                  SizedBox(
+                    width: 520,
+                    child: public_tools_panel
+                ) else 
+                  public_tools_panel
 
-            // ✅ 기존 Title / Body 입력
-            TextField(
-              controller: title_ctrl_,
-              decoration: const InputDecoration(
-                labelText: "Title",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: TextField(
-                controller: body_ctrl_,
-                maxLines: null,
-                expands: true,
-                keyboardType: TextInputType.multiline,
-                decoration: const InputDecoration(
-                  alignLabelWithHint: true,
-                  labelText: "Markdown content",
-                  hintText: "# Heading\nYour content here ...",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (error_msg_ != null)
-              Text(
-                error_msg_!,
-                style: const TextStyle(color: Colors.red),
-              ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: save_btn,
-            ),
-          ],
-        ),
-      ),
+
+
+              ]
+            )
+          );
+        }
+      )
     );
   }
+
+  /*
+  funcs 
+  - _fetchCategories
+  - _onAddCategoryDialog
+  - _onPickThumbnail
+  - _onRemoveThumbnail
+  - _onChangeStatus
+  - _onSelectCategory
+  - _insertMediaIntoMarkdown
+  - _savePost
+  - _openPreview
+  - _calcPadding
+  - _calcGap
+
+
+  */
+  /*서버에서 카테고리 목록을 가져와서 state에 저장하고 UI를 갱신하는 함수 */
+  //성공하면 목록 저장, 기본 선택값 세팅, 에러 제거
+  //실패하면 애러 메시지 저장
+  // 그 변화가 UI에 반영디도록 setState()호출
+  Future<void> _fetchCategories() async {
+    try {
+      final  cats = await CategoryService.fetchCategories();
+      if(!mounted) return; //화면이 아직 살아 있는지확인
+      setState(() {
+        _categories_flat = cats;
+        if(_selected_category_slug == null && cats.isNotEmpty){
+          _selected_category_slug = cats.first.slug;
+        } 
+        _error_msg =null;
+        //성공했으니 애러 표시 제거,
+      });
+    } catch (e) {
+      if(!mounted) return;
+      setState(() => _error_msg = 'Category load error: $e');
+
+    }
+  }
+
+/*새 카테고리 추가 다이얼로그 */
+//목적: 값 반환이 아니라, 상태변경하여 UI업데이트
+  Future<void> _onAddCategoryDialog() async{
+  //void :  변환값 없음
+  
+    final ctrl = TextEditingController(); //입력 컨트롤러 생성
+    final String? name = await showDialog<String>(
+      context : context,
+      builder: (_) => AlertDialog(
+        title: const Text('New category'),
+        content: TextField( 
+          //입력창
+          controller: ctrl,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Category name'),
+          ),
+          /*Cancel과 OK 버튼 */
+          actions :[ 
+            TextButton(
+              onPressed: () => Navigator.pop(context), 
+              //() : 이함수는 인자가 없다. 
+              // => 한줄짜리 함수 쓴다. 
+              //버튼 눌렸을때 실행할 함수를 지금 즉석에서 만들어서 onPressed에 넘기자.
+              child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: ()=> Navigator.pop(context, ctrl.text.trim()),
+              child: const Text('OK'),
+            )
+
+          ]
+        )
+
+        );
+        if( name == null || name.isEmpty) return;
+        
+        try{
+          final cat = await CategoryService.createCategory(name);
+          //서버에 카테고리 생성 요청 -> 성공 시 cat 반환한다. 
+          //이 때 id, slug, name이 서버 기준으로 확정됨.
+          if(!mounted) return; 
+          //비동기 안전장치,
+          //dialog띄운 상태에서 페이지가 dispose되었을 수 있으므로, 아직 살아 있을때만 UI업뎃.
+
+          /*서버에 요청 성공, 그리고 아직 page가 살아 있다면 */
+          //기존 원소에 추가되지 않았으면 추가해라. 
+          setState(() {
+            if(_categories_flat.indexWhere((c) => c.id ==cat.id) < 0 )
+            //c : List인 categories_flat_의 원소 하나하나를 순회하며, 
+            //(c) =>  c.id == cat.id  < 0 : 못찾으면 -1반환, 찾으면 0이상 return 했고, 그것이 0이하면, 아래 줄로
+            {
+              _categories_flat.add(cat);
+              //추가해라. 
+            }
+            _selected_category_slug = cat.slug;
+            //만든 카테고리 녀석을 , 선택 상태로 가자. 
+          });
+        } catch(e) {
+          if(!mounted) return;
+          setState(() => _error_msg = 'Create category error: $e');
+        }
+  }
+
+
+  /* 썸네일로 쓸 이밎 파일 고름*/
+  //고름 -> 바이트로 읽고 -> 서버에 얿로드 -> 업로드 된 URL을 상태에 저장해서 UI에 반영, 
+  Future<void> _onPickThumbnail() async{
+    try{
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['png','jpg','jpeg', 'gif'],
+        withData:true,
+      );
+
+      if(result == null) return; //사용자가 취소 시
+
+      final file = result.files.single; 
+      final Uint8List? bytes = file.bytes;
+      //보통 이미지 데이터는 Uint8List로 전송한다.
+    
+      if(bytes ==null) {
+        setState(() {
+          _error_msg ="cannot read the thumbnail file! ㅜㅜ";
+        });
+        return;
+      }
+
+      final upload_result = await UploadService.uploadBytes(bytes: bytes, filename: file.name);
+      if(!mounted) return;
+
+      setState(() {
+        _thumbnail_rel_url = upload_result.url;
+        _thumbnail_full_url = upload_result.full_url;
+        _error_msg = null;
+      });
+
+    } catch(e) {
+      if(!mounted) return;
+      setState(() {
+        _error_msg = 'Thumbnail upload error: $e';
+      });
+    }
+  }
+
+  void _onRemoveThumbnail() {
+    setState(() {
+      _thumbnail_rel_url = null;
+      _thumbnail_full_url = null;
+    });
+  }
+
+  ///panel쪽에서 드롭다운박스쪽에서 값이변경되었을때 여기서 Post status 값을 알수 있고, 상태를 변경함.
+  /// panel쪽에서 값 변경 감지하고, 부모위젯인 EditorPg에게 새 값 전달하여 부모가 자신의 상태(_status)를 갱신하고 리빌드 요청함.
+  /// setState :  데이터가 바뀌었으니 다음 프레임에 build 다시 실행해서 UI를 갱신하라는 리빌드 요청
+  void _onChangeStatus(PostStatus v) {
+    setState(() => _status = v);
+  }
+
+
+  void _onSelectCategory(String slug){
+    setState(() => _selected_category_slug = slug);
+  } 
+
+  Future<void> _insertMediaIntoMarkdown() async{
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type : FileType.custom,
+        allowedExtensions: ['png', 'jpg', 'jpeg', 'gif', 'mp4', 'mov'],
+        withData: true,
+      );
+      if( result == null) return;
+      final file = result.files.single;
+      final Uint8List? bytes = file.bytes;
+      if(bytes == null) {
+        setState(() => _error_msg = '파일 데이터를 읽을 수 없습니다.');
+        return;
+
+      }
+      /* 1) Nas로 업로드 */
+      final upload_result = await UploadService.uploadBytes(bytes: bytes, filename: file.name);
+
+      /* 2) image option dialogue*/
+      final opt = await showDialog<ImageInsertOption>(
+        context: context,
+        builder: (_) => const ImageOptionDialog(),
+        //팝업이 뜬다. 
+        //(_): 함수에서 굳이 인자를 쓰지 않아서 _씀. 
+        // 원래는 context를 인자로 쓰는데, 내부에서 직접 자체 UI를 그리면 굳이 필ㅇ료 없음. 
+        // 써야 할때는 홤녀 크기에 따라서 다르게 해야 할때,
+       );
+       if(opt == null) return;
+
+       final alt= file.name.isNotEmpty ? file.name : 'media';
+       final title_meta = 'size=${opt.size};align=${opt.align}';
+
+
+       /* 3) insert markdown*/
+        MarkdownInsert.insertImageMarkdown(
+          controller: _body_ctrl, 
+          full_url: upload_result.full_url,
+          alt: alt,
+          title_meta: title_meta
+        );
+        if(!mounted) return;
+        setState(() => _error_msg =null);
+    } catch (e) {
+      if(!mounted) return; //UI 죽어 있으면 아무짓도 안하고 return, 여기서 어떤걸 return 시 crash됨.
+      setState(() => _error_msg = 'Upload error : $e');
+
+    }
+  }
+
+  /* */
+  Future<void> _savePost() async{
+    if(_is_saving) return;
+
+    setState(() {
+      _is_saving = true;
+      _error_msg  =null;
+    });
+
+    try{
+      await PostService.createPost(
+        title:_title_ctrl.text,
+        body_markdown: _body_ctrl.text,
+        tags: const ['flutter1', 'note'],
+        category_slug: _selected_category_slug,
+        thumbnail_rel_url: _thumbnail_rel_url,
+        status: _status // 서버에 추가해야 함. 
+
+      );
+      if(!mounted) return;
+      Navigator.pop(context, true);
+
+    } catch(e) {
+      if(!mounted) return;
+      setState(() => _error_msg = 'Save failed: $e');
+    } finally {
+      if(!mounted) return;
+      setState(() => _is_saving = false);
+    }
+  }
+
+
+  /*간단 preview */
+  void _openPreview() {
+    PreviewDialog.open(
+      context,
+      title: _title_ctrl.text,
+      body: _body_ctrl.text,
+
+    );
+  }
+
+  double _calcPadding(ScreenModel sm) {
+    if(sm.web) return 16;
+    if(sm.tablet) return 14;
+    return 12;
+
+  }
+
+  double _calcGap(ScreenModel sm) {
+    if(sm.web) return 16;
+    if(sm.tablet) return 12;
+    return 10;
+  }
+
+
 }
+
+

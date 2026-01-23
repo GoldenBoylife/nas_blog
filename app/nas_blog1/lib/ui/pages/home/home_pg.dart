@@ -51,7 +51,116 @@ class _HomePgState extends State<HomePg> {
     _fetchCategories();
   }
 
-  /*functions */
+
+  @override
+  Widget build(BuildContext context) {
+    final screen_model = _calcScreenModel(context);
+    final padding = _calcHorizontalPadding(screen_model, MediaQuery.of(context).size.width);
+
+    /*sidebar 위젯 만들기 (카테고리 로딩/에러 처리 포함) */
+    Widget? side_bar;
+    if(_cats_loading) {
+      side_bar = const Center(child: CircularProgressIndicator());
+    } else if( _cats_error !=null) {
+      side_bar = Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment:  CrossAxisAlignment.stretch,
+          children: [
+            
+
+            Text('Category load error:\n$_cats_error'),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed:_fetchCategories,
+              child: const Text('Retry'),
+
+            )
+          ]
+        )
+      );
+    } else {
+      side_bar = CategorySidebar(
+        categories: _category_tree, 
+        // categories: _categories,  //직전
+        selected_slug: _selected_slug, 
+        // selected_slug: null,   //직전
+        // on_select: _onSelectCategory,
+        on_navigate: (slug) {
+          if(slug ==null)
+            Beamer.of(context).beamToNamed('/');
+          else 
+            Beamer.of(context).beamToNamed('/category/$slug');
+        },
+        on_refresh_requested: _fetchCategories,
+        );
+      // side_bar = Container(color: Colors.red);
+    }
+    final h  = MediaQuery.of(context).size.height;
+    final hero_h = (h*0.22) .clamp(120.0, 220.0); //취향값
+    return Stack(
+      children: [
+        CommonScaffold(
+          use_page_scroll: false,
+          current_index: 0,
+          screen_model: screen_model,
+          horizontal_padding : padding,
+          side_bar : side_bar,
+          black: false, //일단 밝게 (원하면 true)
+          children : [
+            /*상단에 제목/설명 넣고 싶으면 여기 추가 */
+
+                //히어로는 여기!
+            
+            // SizedBox(height: hero_h, child: PageHero(screen_model: screen_model)),
+            PageHero(screen_model: screen_model),
+            const SizedBox(height: 18),
+            _BuildMainContentExpanded(),
+            //PostGrid와 PostCard가 여기서 뜬다. 
+            const SizedBox(height: 24),
+
+          ],
+        ),
+        /* FloatingActionButton은 CommonScaffold 안에 넣어도 되지만 지금은 임시로 overlay로 붙임 */
+        Positioned(
+          right: 18,
+          bottom: 18,
+          child: FloatingActionButton.extended(
+            onPressed: () async{
+              final changed  = await Navigator.push(
+                context,
+                MaterialPageRoute(builder : (_) => const EditorPg()),
+              );
+              /*EidtorPg가 Navigator.pop(context,true)로 돌아오면 true됨 */
+              if(changed == true) {
+                _fetchCategories(); //카테고리 추가했을수도,
+                _refreshPosts(); //글도 새로
+              }
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('New'),
+          )
+        )
+      ]
+    );
+  }
+
+  /*
+  funcs
+  - _fetchCategories
+  - _refreshPosts
+  - _onSelectCategory
+  - _calcCrossAxisCount
+  - _buildThumbnail
+  - _buildPostsGrid
+  - _BuildMainContentExpanded
+  - _calcScreenModel
+  - _calcHorizontalPadding
+
+
+  */
+
+
     /*카테고리 목록을 NAS에서 다시 받아와서 화면 상태를 업뎃함 */
   Future<void>  _fetchCategories() async{
     
@@ -246,38 +355,37 @@ class _HomePgState extends State<HomePg> {
     */
     
 
-    return Expanded(
-      //Expanded : 남는 공간을 꽉 채워라. Row, Column같은 Flex 레이아웃에서만 의미가 있음. 
-      child: FutureBuilder<List<PostMeta>> (
-        //FutureBuilder : 비동기 작업의 상태에 따라서 UI를 갈아 끼워줌. 
-        future: _future_posts,
-        builder: (context,snap) {
-          if(snap.connectionState == ConnectionState.waiting) {
-            return  const Center(child: CircularProgressIndicator());
-            
-          }
-          if(snap.hasError || !snap.hasData) {
-            return Center(child: Text('Error: ${snap.error}'));
-          
-          }
-          final posts = snap.data!;
-          //홈은 "All"이면 전체, 아니면 필터된 목록
-          final filtered = (_selected_slug ==null)
-                ? posts 
-                : posts.where((p) => p.category == _selected_slug).toList();
-          return  PostGrid(
-            posts: filtered,
-            on_tap: (p) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => PostPg(post_id: p.id)),
-              );
-            }
-          );
+    return FutureBuilder<List<PostMeta>> (
+      //FutureBuilder : 비동기 작업의 상태에 따라서 UI를 갈아 끼워줌. 
+      future: _future_posts,
+      builder: (context,snap) {
+        if(snap.connectionState == ConnectionState.waiting) {
+          return  const Center(child: CircularProgressIndicator());
           
         }
-      
-      ),
+        if(snap.hasError || !snap.hasData) {
+          return Center(child: Text('Error: ${snap.error}'));
+        
+        }
+        final posts = snap.data!;
+        //홈은 "All"이면 전체, 아니면 필터된 목록
+        final filtered = (_selected_slug ==null)
+              ? posts 
+              : posts.where((p) => p.category == _selected_slug).toList();
+        return  
+        PostGrid(
+          posts: filtered,
+          on_tap: (p) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => PostPg(post_id: p.id)),
+            );
+          }
+        );
+        // SizedBox(height:200);
+        
+      }
+    
     );
   }
 
@@ -302,92 +410,5 @@ class _HomePgState extends State<HomePg> {
  
 
 
-  @override
-  Widget build(BuildContext context) {
-    final screen_model = _calcScreenModel(context);
-    final padding = _calcHorizontalPadding(screen_model, MediaQuery.of(context).size.width);
 
-    /*sidebar 위젯 만들기 (카테고리 로딩/에러 처리 포함) */
-    Widget? side_bar;
-    if(_cats_loading) {
-      side_bar = const Center(child: CircularProgressIndicator());
-    } else if( _cats_error !=null) {
-      side_bar = Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment:  CrossAxisAlignment.stretch,
-          children: [
-            
-
-            Text('Category load error:\n$_cats_error'),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed:_fetchCategories,
-              child: const Text('Retry'),
-
-            )
-          ]
-        )
-      );
-    } else {
-      side_bar = CategorySidebar(
-        categories: _category_tree, 
-        // categories: _categories,  //직전
-        selected_slug: _selected_slug, 
-        // selected_slug: null,   //직전
-        // on_select: _onSelectCategory,
-        on_navigate: (slug) {
-          if(slug ==null)
-            Beamer.of(context).beamToNamed('/');
-          else 
-            Beamer.of(context).beamToNamed('/category/$slug');
-        },
-        on_refresh_requested: _fetchCategories,
-        );
-    }
-
-    return Stack(
-      children: [
-        CommonScaffold(
-          use_page_scroll: false,
-          current_index: 0,
-          screen_model: screen_model,
-          horizontal_padding : padding,
-          side_bar : side_bar,
-          black: false, //일단 밝게 (원하면 true)
-          children : [
-            /*상단에 제목/설명 넣고 싶으면 여기 추가 */
-
-                //히어로는 여기!
-            PageHero(screen_model: screen_model),
-            const SizedBox(height: 18),
-            _BuildMainContentExpanded(),
-            //PostGrid와 PostCard가 여기서 뜬다. 
-            const SizedBox(height: 24),
-
-          ],
-        ),
-        /* FloatingActionButton은 CommonScaffold 안에 넣어도 되지만 지금은 임시로 overlay로 붙임 */
-        Positioned(
-          right: 18,
-          bottom: 18,
-          child: FloatingActionButton.extended(
-            onPressed: () async{
-              final changed  = await Navigator.push(
-                context,
-                MaterialPageRoute(builder : (_) => const EditorPg()),
-              );
-              /*EidtorPg가 Navigator.pop(context,true)로 돌아오면 true됨 */
-              if(changed == true) {
-                _fetchCategories(); //카테고리 추가했을수도,
-                _refreshPosts(); //글도 새로
-              }
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('New'),
-          )
-        )
-      ]
-    );
-  }
 }
