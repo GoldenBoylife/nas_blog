@@ -18,6 +18,8 @@ import 'package:nas_blog1/ui/pages/common/widgets/pageWidget/common_scaffold_tab
 import 'package:nas_blog1/ui/pages/common/widgets/pageWidget/footer.dart';
 
 class CommonScaffold extends StatefulWidget {
+
+
   final int current_index; //현재 선택도니 메뉴가 무슨 항목인지
   final ScreenModel screen_model; //디바이스기종에 따라서, 
   final List<Widget> children; //밖에서 children 선언해서 여기로 가져옴. 
@@ -29,6 +31,8 @@ class CommonScaffold extends StatefulWidget {
 
   final bool use_page_scroll; //기본 true
 
+  final List<Widget> top_bar_actions; 
+
   const CommonScaffold({
 
     required this.current_index,
@@ -38,6 +42,7 @@ class CommonScaffold extends StatefulWidget {
     this.black = true,  //밤낮모드
     this.horizontal_padding = 0,  
     this.use_page_scroll = true,
+    this.top_bar_actions = const <Widget>[],
     super.key});
 
 
@@ -169,6 +174,7 @@ class _CommonScaffoldState extends State<CommonScaffold> {
       //데탑모드 아니거나, sidebar가 필요한 곳이면,
 
       on_tap_hamburger:  toggleDrawer,
+      actions: widget.top_bar_actions,
 
     );
     if( is_desktop) 

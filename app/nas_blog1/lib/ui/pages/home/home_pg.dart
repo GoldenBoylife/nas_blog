@@ -21,6 +21,11 @@ import 'package:nas_blog1/ui/pages/common/widgets/page_hero/page_hero.dart';
 import 'package:nas_blog1/ui/pages/post/post_pg.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/post/post_card.dart';
 
+import 'package:nas_blog1/ui/pages/common/state/admin_gate.dart';
+import 'package:nas_blog1/ui/pages/common/dialogs/admin_login_dialog.dart';
+
+
+
 
 class HomePg extends StatefulWidget {
   const HomePg({super.key});
@@ -54,6 +59,8 @@ class _HomePgState extends State<HomePg> {
 
   @override
   Widget build(BuildContext context) {
+
+    
     final screen_model = _calcScreenModel(context);
     final padding = _calcHorizontalPadding(screen_model, MediaQuery.of(context).size.width);
 
@@ -98,50 +105,46 @@ class _HomePgState extends State<HomePg> {
     }
     final h  = MediaQuery.of(context).size.height;
     final hero_h = (h*0.22) .clamp(120.0, 220.0); //취향값
-    return Stack(
-      children: [
-        CommonScaffold(
-          use_page_scroll: false,
-          current_index: 0,
-          screen_model: screen_model,
-          horizontal_padding : padding,
-          side_bar : side_bar,
-          black: false, //일단 밝게 (원하면 true)
-          children : [
-            /*상단에 제목/설명 넣고 싶으면 여기 추가 */
+    return CommonScaffold(
+      use_page_scroll: false,
+      current_index: 0,
+      screen_model: screen_model,
+      horizontal_padding : padding,
+      side_bar : side_bar,
+      black: false, //일단 밝게 (원하면 true)
+      top_bar_actions: _topActions(),
+      children : [
+        /*상단에 제목/설명 넣고 싶으면 여기 추가 */
+    
+            //히어로는 여기!
+        
+        // SizedBox(height: hero_h, child: PageHero(screen_model: screen_model)),
+        PageHero(screen_model: screen_model),
+        const SizedBox(height: 18),
+        _BuildMainContentExpanded(),
+        //PostGrid와 PostCard가 여기서 뜬다. 
+        const SizedBox(height: 24),
+Column(
+  children: [
+    const Text('ASSET TEST'),
+    const SizedBox(height: 12),
+    Container(
+      width: 400,
+      height: 200,
+      color: Colors.grey.shade200,
+      child: Image.asset(
+        'assets/logo.png',
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stack) {
+          return Text('asset error: $error');
+        },
+      ),
+    ),
+  ],
+)
 
-                //히어로는 여기!
-            
-            // SizedBox(height: hero_h, child: PageHero(screen_model: screen_model)),
-            PageHero(screen_model: screen_model),
-            const SizedBox(height: 18),
-            _BuildMainContentExpanded(),
-            //PostGrid와 PostCard가 여기서 뜬다. 
-            const SizedBox(height: 24),
-
-          ],
-        ),
-        /* FloatingActionButton은 CommonScaffold 안에 넣어도 되지만 지금은 임시로 overlay로 붙임 */
-        Positioned(
-          right: 18,
-          bottom: 18,
-          child: FloatingActionButton.extended(
-            onPressed: () async{
-              final changed  = await Navigator.push(
-                context,
-                MaterialPageRoute(builder : (_) => const EditorPg()),
-              );
-              /*EidtorPg가 Navigator.pop(context,true)로 돌아오면 true됨 */
-              if(changed == true) {
-                _fetchCategories(); //카테고리 추가했을수도,
-                _refreshPosts(); //글도 새로
-              }
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('New'),
-          )
-        )
-      ]
+    
+      ],
     );
   }
 
@@ -156,6 +159,7 @@ class _HomePgState extends State<HomePg> {
   - _BuildMainContentExpanded
   - _calcScreenModel
   - _calcHorizontalPadding
+  - _topActions
 
 
   */
@@ -407,8 +411,61 @@ class _HomePgState extends State<HomePg> {
     if(sm.tablet) return 12;
     return 10;
   }
- 
+List<Widget> _topActions() {
+  return [
+    ValueListenableBuilder<bool>(
+      valueListenable: AdminGate.is_admin,
+      builder: (context, isAdmin, _) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: isAdmin ? 'Logout' : 'Login',
+              icon: Icon(isAdmin ? Icons.lock_open : Icons.lock_outline),
+              onPressed: () async {
+                if (isAdmin) {
+                  AdminGate.logout();
+                  return;
+                }
 
+                final ok = await AdminLoginDialog.open(
+                  context,
+                  password: ADMIN_PASS,
+                );
+
+                if (!context.mounted) return;
+
+                if (ok) AdminGate.login();
+              },
+            ),
+
+            if (isAdmin) ...[
+              const SizedBox(width: 6),
+              IconButton(
+                tooltip: 'New Post',
+                icon: const Icon(Icons.edit_square),
+                onPressed: () async {
+                  final changed = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const EditorPg()),
+                  );
+
+                  if (!context.mounted) return;
+
+                  if (changed == true) {
+                    _fetchCategories();
+                    _refreshPosts();
+                  }
+                },
+              ),
+            ],
+          ],
+        );
+      },
+    ),
+    const SizedBox(width: 4),
+  ];
+}
 
 
 }
