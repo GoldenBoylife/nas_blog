@@ -57,7 +57,11 @@ class PostGrid extends StatelessWidget {
     //폭값에 따라서 열의 갯수를 정하는 구만. 
 
     return GridView.builder(
-      padding: padding, //gridview의 패딩 값
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      // padding: padding, //gridview의 패딩 값
+      padding: const EdgeInsets.only(top: 12, bottom: 80),
+
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: cross,
         crossAxisSpacing: cross_axis_spacing,

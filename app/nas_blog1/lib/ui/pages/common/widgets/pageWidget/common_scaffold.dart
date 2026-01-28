@@ -148,12 +148,16 @@ class _CommonScaffoldState extends State<CommonScaffold> {
         ),
       );
     } else {
-      content = Padding(
-            padding: content_padding,
-            child: Column(
-              crossAxisAlignment:  CrossAxisAlignment.stretch,
-              children: content_children
-            ),
+      // content = Padding(
+      //       padding: content_padding,
+      //       child: Column(
+      //         crossAxisAlignment:  CrossAxisAlignment.stretch,
+      //         children: content_children
+      //       ),
+      // );
+      content = ListView(
+        controller: scroll_controller,
+        children: content_children,
       );
     }
 

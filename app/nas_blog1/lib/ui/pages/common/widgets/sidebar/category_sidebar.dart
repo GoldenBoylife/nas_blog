@@ -250,7 +250,8 @@ Widget _buildSubTile(BlogCategory cat) {
     return Container(
       color: Colors.white,
       child: SafeArea(
-        child: Column(
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
             const SizedBox(height: 12),
 
@@ -263,14 +264,14 @@ Widget _buildSubTile(BlogCategory cat) {
 
             _buildAllTile(),
             const SizedBox(height: 8),
-            Expanded(
-              child: ListView(
-                children: widget.categories
-                    .map((c) => _buildCategoryNode(c))
-                    .toList(),
-              )
-            )
-
+            // Expanded(
+            //   child: ListView(
+            //     children: widget.categories
+            //         .map((c) => _buildCategoryNode(c))
+            //         .toList(),
+            //   )
+            // )
+            ...widget.categories.map(_buildCategoryNode),
           ],
         ),
       ),
