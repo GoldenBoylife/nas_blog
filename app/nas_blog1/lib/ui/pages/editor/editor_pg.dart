@@ -22,6 +22,7 @@ import 'dialogs/preview_dialog.dart';
 import 'widgets/editor_appbar.dart';
 import 'widgets/editor_tools_panel.dart';
 import 'widgets/publish_tools_panel.dart';
+import 'dialogs/add_category_dialog.dart';
 
 
 /// EditorPg
@@ -199,38 +200,18 @@ class _EditorPgState extends State<EditorPg> {
   //void :  변환값 없음
   
     final ctrl = TextEditingController(); //입력 컨트롤러 생성
-    final String? name = await showDialog<String>(
+    final result = await showDialog<AddCategoryDialogResult>(
       context : context,
-      builder: (_) => AlertDialog(
-        title: const Text('New category'),
-        content: TextField( 
-          //입력창
-          controller: ctrl,
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Category name'),
-          ),
-          /*Cancel과 OK 버튼 */
-          actions :[ 
-            TextButton(
-              onPressed: () => Navigator.pop(context), 
-              //() : 이함수는 인자가 없다. 
-              // => 한줄짜리 함수 쓴다. 
-              //버튼 눌렸을때 실행할 함수를 지금 즉석에서 만들어서 onPressed에 넘기자.
-              child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: ()=> Navigator.pop(context, ctrl.text.trim()),
-              child: const Text('OK'),
-            )
+      builder: (_) => AddCategoryDialog(
+        categories_flat : _categories_flat));
 
-          ]
-        )
-
-        );
-        if( name == null || name.isEmpty) return;
+        if( result == null) return;
         
         try{
-          final cat = await CategoryService.createCategory(name);
+          final cat = await CategoryService.createCategory(
+            result.name,
+            parent_id : result.parent_id,
+          );
           //서버에 카테고리 생성 요청 -> 성공 시 cat 반환한다. 
           //이 때 id, slug, name이 서버 기준으로 확정됨.
           if(!mounted) return; 
@@ -247,7 +228,8 @@ class _EditorPgState extends State<EditorPg> {
               _categories_flat.add(cat);
               //추가해라. 
             }
-            _selected_category_slug = cat.slug;
+            _selected_category_slug = cat.slug; //만든 카테고리 선택
+            _error_msg = null;
             //만든 카테고리 녀석을 , 선택 상태로 가자. 
           });
         } catch(e) {
