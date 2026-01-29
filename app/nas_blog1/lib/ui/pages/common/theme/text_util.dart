@@ -27,7 +27,6 @@ class TextUtil {
   /// fontSize = 20
   static TextStyle get20(BuildContext context, Color color,{FontWeight font_weight = FontWeight.w500}) {
     return Theme.of(context).textTheme.titleMedium!.copyWith(
-      color: color,
       fontWeight: font_weight);
   }
 
