@@ -1,5 +1,6 @@
 
 import 'dart:async';
+import 'dart:math';
 import 'package:beamer/beamer.dart';
 import 'package:flutter/material.dart';
 import 'package:nas_blog1/config/config.dart';
@@ -10,9 +11,11 @@ import 'package:nas_blog1/models/screen_model.dart';
 import 'package:nas_blog1/services/category_service.dart';
 import 'package:nas_blog1/services/category_tree_builder.dart';
 import 'package:nas_blog1/services/post_service.dart';
+import 'package:nas_blog1/ui/common_widgets/full_bleed.dart';
 import 'package:nas_blog1/ui/pages/common/theme/text_util.dart';
 
 import 'package:nas_blog1/ui/pages/common/widgets/pageWidget/common_scaffold.dart';
+import 'package:nas_blog1/ui/pages/common/widgets/post/post_card_grid.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/post/post_grid.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/sidebar/category_sidebar.dart';
 
@@ -65,48 +68,13 @@ class _HomePgState extends State<HomePg> {
     final padding = _calcHorizontalPadding(screen_model, MediaQuery.of(context).size.width);
 
     /*sidebar 위젯 만들기 (카테고리 로딩/에러 처리 포함) */
-    Widget? side_bar;
-    if(_cats_loading) {
-      side_bar = const Center(child: CircularProgressIndicator());
-    } else if( _cats_error !=null) {
-      side_bar = Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment:  CrossAxisAlignment.stretch,
-          children: [
-            
-
-            Text('Category load error:\n$_cats_error'),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed:_fetchCategories,
-              child: const Text('Retry'),
-
-            )
-          ]
-        )
-      );
-    } else {
-      side_bar = CategorySidebar(
-        categories: _category_tree, 
-        // categories: _categories,  //직전
-        selected_slug: _selected_slug, 
-        // selected_slug: null,   //직전
-        // on_select: _onSelectCategory,
-        on_navigate: (slug) {
-          if(slug ==null)
-            Beamer.of(context).beamToNamed('/');
-          else 
-            Beamer.of(context).beamToNamed('/category/$slug');
-        },
-        on_refresh_requested: _fetchCategories,
-        );
-      // side_bar = Container(color: Colors.red);
-    }
+    Widget? side_bar = _buildSidebar(context);
+    
     final h  = MediaQuery.of(context).size.height;
     final hero_h = (h*0.22) .clamp(120.0, 220.0); //취향값
     return CommonScaffold(
       use_page_scroll: false,
+      content_max_width: 1100, //홈은 1100정도 추천
       current_index: 0,
       screen_model: screen_model,
       horizontal_padding : padding,
@@ -114,37 +82,16 @@ class _HomePgState extends State<HomePg> {
       black: false, //일단 밝게 (원하면 true)
       top_bar_actions: _topActions(),
       children : [
-        /*상단에 제목/설명 넣고 싶으면 여기 추가 */
     
-            //히어로는 여기!
+          FullBleed(
+            child: PageHero(screen_model: screen_model),
+            ),
+          const SizedBox(height: 18),
+          _BuildMainContentExpanded(),
+          //PostGrid와 PostCard가 여기서 뜬다. 
+          const SizedBox(height: 24)
         
-        // SizedBox(height: hero_h, child: PageHero(screen_model: screen_model)),
-        PageHero(screen_model: screen_model),
-        const SizedBox(height: 18),
-        _BuildMainContentExpanded(),
-        //PostGrid와 PostCard가 여기서 뜬다. 
-        const SizedBox(height: 24),
-Column(
-  children: [
-    const Text('ASSET TEST'),
-    const SizedBox(height: 12),
-    Container(
-      width: 400,
-      height: 200,
-      color: Colors.grey.shade200,
-      child: Image.asset(
-        'assets/logo.png',
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stack) {
-          return Text('asset error: $error');
-        },
-      ),
-    ),
-  ],
-)
-
-    
-      ],
+      ]
     );
   }
 
@@ -159,8 +106,9 @@ Column(
   - _BuildMainContentExpanded
   - _calcScreenModel
   - _calcHorizontalPadding
+  - _buildSidebar
   - _topActions
-
+  - _maxWidthCenter
 
   */
 
@@ -289,58 +237,58 @@ Column(
     commonScaffold의  스크롤 기능을 각 페이지들(homePg)에서 할수 잇도록 바꾸겟음.그래서 buildPostsGrid로 바꿈
     이렇게 하면 homePg에서만 스크롤 사용하므로 팅김을 방지할 수 있음
   */
-  Widget _buildPostsGrid(List<PostMeta> posts) {
-    // UI에서 category 필터링(서버 필터가 아직 없을 때) 
-    final filtered = (_selected_slug == null) 
-      ? posts
-      : posts.where((p) => p.category == _selected_slug).toList();
-    if(filtered.isEmpty) {
-      return const Center(child: Text('No posts'));
-    }
+  // Widget _buildPostsGrid(List<PostMeta> posts) {
+  //   // UI에서 category 필터링(서버 필터가 아직 없을 때) 
+  //   final filtered = (_selected_slug == null) 
+  //     ? posts
+  //     : posts.where((p) => p.category == _selected_slug).toList();
+  //   if(filtered.isEmpty) {
+  //     return const Center(child: Text('No posts'));
+  //   }
 
-    final w = MediaQuery.of(context).size.width;
-    final cross = _calcCrossAxisCount(w);
-    final show_chip = ( w >= 360); //기준 취향
+  //   final w = MediaQuery.of(context).size.width;
+  //   final cross = _calcCrossAxisCount(w);
+  //   final show_chip = ( w >= 360); //기준 취향
 
                               
                           
-    return GridView.builder(
+  //   return GridView.builder(
       
-      padding: const EdgeInsets.only(top: 12, bottom :80),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: cross,
-        //화면 너비에 따라서 한줄에 보여줄 카드의 갯수 정함
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        mainAxisExtent: 270, //카드 높이 고정(썸네일 150 + 아래영역)
+  //     padding: const EdgeInsets.only(top: 12, bottom :80),
+  //     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+  //       crossAxisCount: cross,
+  //       //화면 너비에 따라서 한줄에 보여줄 카드의 갯수 정함
+  //       crossAxisSpacing: 16,
+  //       mainAxisSpacing: 16,
+  //       mainAxisExtent: 270, //카드 높이 고정(썸네일 150 + 아래영역)
         
-        ),
+  //       ),
 
-      itemCount: filtered.length,
-      // separatorBuilder: (_,__) => const Divider(height :1), 
-      itemBuilder: (context, index) {
-        final p = filtered[index];
-        return PostCard(
-          post: p,
-          //기존 ListTile은 빠르게 리스트 만들기 위한 거고, 
-          //이 InkWell은 터치 효과, 클릭 처리를 위한 것이다. 
-          //이제 inpa처럼  썸네일 크기, 카드를 직접 제작하기위해서 이걸로 바꿈. 
-          on_tap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PostPg(post_id : p.id)
-                )
-            );
-          },
-        );
-      }
+  //     itemCount: filtered.length,
+  //     // separatorBuilder: (_,__) => const Divider(height :1), 
+  //     itemBuilder: (context, index) {
+  //       final p = filtered[index];
+  //       return PostCard(
+  //         post: p,
+  //         //기존 ListTile은 빠르게 리스트 만들기 위한 거고, 
+  //         //이 InkWell은 터치 효과, 클릭 처리를 위한 것이다. 
+  //         //이제 inpa처럼  썸네일 크기, 카드를 직접 제작하기위해서 이걸로 바꿈. 
+  //         on_tap: () {
+  //           Navigator.push(
+  //             context,
+  //             MaterialPageRoute(
+  //               builder: (_) => PostPg(post_id : p.id)
+  //               )
+  //           );
+  //         },
+  //       );
+  //     }
       
       
-    );
-  }
+  //   );
+  // }
 
-  /*slug 조건에 맞는 액자들만 골라서 PostGrid 벽 가장자리에 걸어둔다.  */
+  // /*slug 조건에 맞는 액자들만 골라서 PostGrid 벽 가장자리에 걸어둔다.  */
   Widget _BuildMainContentExpanded() {
     /*CommondScaffold는 body를 SingleChildScrollView로 감싸고 있어서,
     여기서는 스크롤 가능한 리스트를 만들어 놓으면 Nested scroll이 꼬일 수 있음. 
@@ -377,21 +325,31 @@ Column(
               ? posts 
               : posts.where((p) => p.category == _selected_slug).toList();
         return  
-        PostGrid(
+        // PostGrid(
+        //   posts: filtered,
+        //   on_tap: (p) {
+        //     Navigator.push(
+        //       context,
+        //       MaterialPageRoute(builder: (_) => PostPg(post_id: p.id)),
+        //     );
+        //   }
+        // );
+        PostCardGrid(
+          title: '최신 글 ',
+          sub_title: "따끈 따끈한 포스트 구경해보세요!",
           posts: filtered,
-          on_tap: (p) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => PostPg(post_id: p.id)),
+          featured: true,
+          on_tap:(p) {
+            return Beamer.of(context).beamToNamed('/post/${p.id}');
+          },
             );
           }
+
         );
         // SizedBox(height:200);
         
       }
-    
-    );
-  }
+  
 
 
   ScreenModel _calcScreenModel(BuildContext context) 
@@ -411,61 +369,122 @@ Column(
     if(sm.tablet) return 12;
     return 10;
   }
-List<Widget> _topActions() {
-  return [
-    ValueListenableBuilder<bool>(
-      valueListenable: AdminGate.is_admin,
-      builder: (context, isAdmin, _) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
+  Widget? _buildSidebar(BuildContext context) {
+    if(_cats_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if(_cats_error != null) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            IconButton(
-              tooltip: isAdmin ? 'Logout' : 'Login',
-              icon: Icon(isAdmin ? Icons.lock_open : Icons.lock_outline),
-              onPressed: () async {
-                if (isAdmin) {
-                  AdminGate.logout();
-                  return;
-                }
+            Text('Category load error:\n$_cats_error'),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _fetchCategories,
+              child: const Text('Retry')
+              )
+            ]
+          
+        )
+      );
+    }
+    return CategorySidebar(
+      categories: _category_tree,
+      selected_slug : _selected_slug,
+      show_all_tile: false,
+      on_navigate: (slug) {
+        if(slug == null) 
+          Beamer.of(context).beamToNamed('/');
+        else 
+          Beamer.of(context).beamToNamed('/category/$slug');
+      },
+      on_refresh_requested: _fetchCategories,
+    );
+  }
+  
 
-                final ok = await AdminLoginDialog.open(
-                  context,
-                  password: ADMIN_PASS,
-                );
 
-                if (!context.mounted) return;
-
-                if (ok) AdminGate.login();
-              },
-            ),
-
-            if (isAdmin) ...[
-              const SizedBox(width: 6),
+  List<Widget> _topActions() {
+    return [
+      ValueListenableBuilder<bool>(
+        valueListenable: AdminGate.is_admin,
+        builder: (context, isAdmin, _) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               IconButton(
-                tooltip: 'New Post',
-                icon: const Icon(Icons.edit_square),
+                tooltip: isAdmin ? 'Logout' : 'Login',
+                icon: Icon(isAdmin ? Icons.lock_open : Icons.lock_outline),
                 onPressed: () async {
-                  final changed = await Navigator.push(
+                  if (isAdmin) {
+                    AdminGate.logout();
+                    return;
+                  }
+
+                  final ok = await AdminLoginDialog.open(
                     context,
-                    MaterialPageRoute(builder: (_) => const EditorPg()),
+                    password: ADMIN_PASS,
                   );
 
                   if (!context.mounted) return;
 
-                  if (changed == true) {
-                    _fetchCategories();
-                    _refreshPosts();
-                  }
+                  if (ok) AdminGate.login();
                 },
               ),
+
+              if (isAdmin) ...[
+                const SizedBox(width: 6),
+                IconButton(
+                  tooltip: 'New Post',
+                  icon: const Icon(Icons.edit_square),
+                  onPressed: () async {
+                    final changed = await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const EditorPg()),
+                    );
+
+                    if (!context.mounted) return;
+
+                    if (changed == true) {
+                      _fetchCategories();
+                      _refreshPosts();
+                    }
+                  },
+                ),
+              ],
             ],
-          ],
-        );
-      },
-    ),
-    const SizedBox(width: 4),
-  ];
-}
+          );
+        },
+      ),
+      const SizedBox(width: 4),
+    ];
+  }
+  Widget _maxWidthCenter(Widget child) {
+    const maxW = 1100.0; // 취향: 960~1200 추천
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: maxW),
+        child: child,
+      ),
+    );
+  }
 
 
-}
+
+
+
+
+
+
+
+
+}// end
+
+
+
+
+
+

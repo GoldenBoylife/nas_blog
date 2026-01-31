@@ -289,6 +289,7 @@ Future<void> _pickThumbnail() async {
   //   };
 
   try {
+    if(widget.post_id ==null) {
       await PostService.createPost(
         title: title_ctrl_.text,
         body_markdown: body_ctrl_.text,
@@ -296,6 +297,17 @@ Future<void> _pickThumbnail() async {
         category_slug: _selectedCategory?.slug,
         thumbnail_rel_url: _thumbnail_rel_url,
       );
+    } else {
+      await PostService.updatePost(
+        id: widget.post_id!,
+        title: title_ctrl_.text,
+        body_markdown: body_ctrl_.text,
+        category_slug: _selected_category_slug,
+        thumbnail_rel_url: _thumbnail_rel_url,
+        status: _status,
+        tag: const ['flutter1', 'note'],
+      )
+    }
 
       if (!mounted) return;
       Navigator.pop(context, true); // 작성 완료 후 이전 화면으로

@@ -4,6 +4,7 @@ import 'package:nas_blog1/models/post_meta.dart';
 import 'package:nas_blog1/models/screen_model.dart';
 import 'package:nas_blog1/services/category_service.dart';
 import 'package:nas_blog1/services/post_service.dart';
+import 'package:nas_blog1/ui/common_widgets/full_bleed.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/pageWidget/common_scaffold.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/page_hero/page_hero.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/post/post_grid.dart';
@@ -93,6 +94,7 @@ class _CategoryPgState extends State<CategoryPg> {
         final side_bar = CategorySidebar(
           categories: categories,
           selected_slug: widget.slug, 
+          show_all_tile:  true,
           on_navigate: (slug) {
             if (slug == null) {
               Beamer.of(context).beamToNamed('/');
@@ -109,50 +111,17 @@ class _CategoryPgState extends State<CategoryPg> {
 
         return CommonScaffold(
           use_page_scroll: false,
+          content_max_width: 1100, //본문 크기
           current_index: 0,
           screen_model: screen_model,
           horizontal_padding: padding,
           side_bar: side_bar,
           black: false,
           children: [
-            PageHero(screen_model: screen_model),
+            FullBleed( child: PageHero(screen_model: screen_model)),
             const SizedBox(height: 18),
-            // const SizedBox(height: 12),
-
-            // 페이지 타이틀
-            // Text(
-            //   widget.slug.toUpperCase(),
-            //   style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
-            // ),
-            // const SizedBox(height: 12),
 
             _BuildMainContentExpanded(),
-
-            // Expanded(
-            //   child: FutureBuilder<List<PostMeta>>(
-            //     future: _future_posts,
-            //     builder: (context, snap) {
-            //       if (!snap.hasData) {
-            //         return const Center(child: CircularProgressIndicator());
-            //       }
-
-            //       final all = snap.data!;
-            //       final filtered =
-            //           all.where((p) => p.category == widget.slug).toList();
-
-            //       if (filtered.isEmpty) {
-            //         return Center(child: Text('No posts in ${widget.slug}'));
-            //       }
-
-            //       return ListView.builder(
-            //         itemCount: filtered.length,
-            //         itemBuilder: (_, i) {
-            //           return ListTile(title: Text(filtered[i].title));
-            //         },
-            //       );
-            //     },
-            //   ),
-            // ),
 
             const SizedBox(height: 24),
           ],
