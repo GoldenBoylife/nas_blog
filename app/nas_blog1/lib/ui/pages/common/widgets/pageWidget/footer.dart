@@ -18,17 +18,17 @@ class Footer extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start, // 왼쪽 정렬
         children: [
           // 회사 정보, 주소 및 연락처 부분
-          Text("임시용", style: TextUtil.get24(context, Colors.black)),
+          Text("Dev_v0.1.0", style: TextUtil.get24(context, Colors.black)),
           const SizedBox(height: 8),
-          Text("Contact us", style: TextUtil.get24(context, Colors.black)),
+          Text("Contact me", style: TextUtil.get24(context, Colors.black)),
           const SizedBox(height: 8),
           Text(
-            "69, Seongnam-daero, Bundang-gu, Seongnam-si, Gyeonggi-do, Republic of Korea", 
+            "South Korea", 
             style: TextUtil.get16(context, MyColor.gray80)
           ),
           const SizedBox(height: 8),
           Text(
-            "Email: stpc@stpc.co.kr  Fax: +82-31-716-1374", 
+            "Email: ---,", 
             style: TextUtil.get16(context, MyColor.gray80)
           ),
           const SizedBox(height: 20),

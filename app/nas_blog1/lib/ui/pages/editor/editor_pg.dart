@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:nas_blog1/config/config.dart';
 import 'package:nas_blog1/models/screen_model.dart';
 import 'package:nas_blog1/services/upload_service.dart';
 import 'package:nas_blog1/models/blog_category.dart';
@@ -31,7 +32,8 @@ import 'dialogs/add_category_dialog.dart';
 /// how it works
 /// 
 class EditorPg extends StatefulWidget {
-  const EditorPg({super.key});
+  final String? post_id;
+  const EditorPg({super.key, this.post_id});
 
   @override
   State<EditorPg> createState() => _EditorPgState();
@@ -60,6 +62,10 @@ class _EditorPgState extends State<EditorPg> {
     _title_ctrl = TextEditingController();
     _body_ctrl = TextEditingController();
     _fetchCategories();
+
+    if(widget.post_id != null) {
+      _loadExistingPost(widget.post_id!);
+    }
   }
 
   @override
@@ -95,6 +101,8 @@ class _EditorPgState extends State<EditorPg> {
     
     return Scaffold(
       appBar: EditorAppBar(
+        title: widget.post_id ==null 
+                ? 'New Post' : 'Edit Post',
         is_saving: _is_saving,
         on_preview: _openPreview,
         on_save: _savePost,
@@ -168,6 +176,7 @@ class _EditorPgState extends State<EditorPg> {
   - _openPreview
   - _calcPadding
   - _calcGap
+  - _loadExistingPost : 이미 존재하는 post를 load하기.
 
 
   */
@@ -357,17 +366,31 @@ class _EditorPgState extends State<EditorPg> {
     });
 
     try{
-      await PostService.createPost(
-        title:_title_ctrl.text,
-        body_markdown: _body_ctrl.text,
-        tags: const ['flutter1', 'note'],
-        category_slug: _selected_category_slug,
-        thumbnail_rel_url: _thumbnail_rel_url,
-        status: _status // 서버에 추가해야 함. 
+      if(widget.post_id ==null) {
+        //New
+        await PostService.createPost(
+          title:_title_ctrl.text,
+          body_markdown: _body_ctrl.text,
+          tags: const ['note', 'study'],
+          category_slug: _selected_category_slug,
+          thumbnail_rel_url: _thumbnail_rel_url,
+          status: _status // 서버에 추가해야 함. 
 
-      );
-      if(!mounted) return;
-      Navigator.pop(context, true);
+        );
+      } else {
+        //Edit
+        await PostService.updatePost(
+          id: widget.post_id!,
+          title: _title_ctrl.text,
+          body_markdown: _body_ctrl.text,
+          tags: const ['note', 'study'],
+          category_slug: _selected_category_slug,
+          thumbnail_rel_url: _thumbnail_rel_url,
+          status: _status,
+          );
+      }
+        if(!mounted) return;
+        Navigator.pop(context, true);
 
     } catch(e) {
       if(!mounted) return;
@@ -402,7 +425,34 @@ class _EditorPgState extends State<EditorPg> {
     return 10;
   }
 
+  Future<void> _loadExistingPost(String id) async{
+    try{
+      final post = await PostService.fetchPost(id); //PostDetail
+      if(!mounted) return;
 
-}
+      setState(() {
+        _title_ctrl.text = post.meta.title;
+        _body_ctrl.text = post.body_markdown;
+        _selected_category_slug = post.meta.category;
+
+        /*썸네일 있으면 세팅 */
+        final rel = post.meta.thumbnail; //필드명은 본인 meta에 맞게, 
+        _thumbnail_rel_url = rel;
+        _thumbnail_full_url = (rel == null || rel.isEmpty)
+                              ? null
+                              : (rel.startsWith('http') ? rel : '$NAS_BASE_URL$rel');
+        _error_msg=null;
+      });
+    } catch (e) {
+      if(!mounted) return;
+      setState(() => _error_msg = 'Load post failed: $e');
+
+    }
+
+  }
+
+
+
+}//end
 
 

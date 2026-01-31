@@ -11,9 +11,11 @@ class EditorAppBar extends StatelessWidget implements PreferredSizeWidget{
   final bool is_saving;
   final VoidCallback on_preview;
   final VoidCallback on_save;
+  final String title;
 
   const EditorAppBar({
     super.key,
+    required this.title,
     required this.is_saving,
     required this.on_preview, //콜백함수
     required this.on_save,
@@ -22,7 +24,7 @@ class EditorAppBar extends StatelessWidget implements PreferredSizeWidget{
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title:  const Text('New Post'),
+      title:  Text(title),
       actions: [
         IconButton(
           tooltip: 'Preview',

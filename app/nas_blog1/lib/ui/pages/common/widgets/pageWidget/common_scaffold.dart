@@ -9,9 +9,11 @@ splite the screen into three separate sections.
 
 import 'package:flutter/material.dart';
 import 'package:nas_blog1/models/screen_model.dart' show ScreenModel;
+import 'package:nas_blog1/ui/common_widgets/full_bleed.dart';
 
 import 'package:nas_blog1/ui/pages/common/widgets/menu/menu.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/menu/top_bar.dart';
+import 'package:nas_blog1/ui/pages/common/widgets/overlay/with_overlay.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/pageWidget/common_scaffold_desktop.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/pageWidget/common_scaffold_mobile.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/pageWidget/common_scaffold_tablet.dart';
@@ -32,6 +34,9 @@ class CommonScaffold extends StatefulWidget {
   final bool use_page_scroll; //기본 true
 
   final List<Widget> top_bar_actions; 
+  final double? content_max_width; // null이면 제한 없음.
+  final Widget? content_overlay; //content위에 고정으로 올릴 위젯
+
 
   const CommonScaffold({
 
@@ -43,6 +48,8 @@ class CommonScaffold extends StatefulWidget {
     this.horizontal_padding = 0,  
     this.use_page_scroll = true,
     this.top_bar_actions = const <Widget>[],
+    this.content_max_width, 
+    this.content_overlay,
     super.key});
 
 
@@ -141,30 +148,39 @@ class _CommonScaffoldState extends State<CommonScaffold> {
 
     /*기존 page 전체 스크롤, InkWell, Card 안쓰는 곳에서는 필요하니께 */
     //use_page_scroll에 따라서 content만 달라짐
+    //padding을 각 item에 적용함. 
     late final Widget content;
 
     if(widget.use_page_scroll){
         content = SingleChildScrollView(
         controller: scroll_controller,
         padding: content_padding,
-        child:  Column(
-          crossAxisAlignment:  CrossAxisAlignment.stretch,
-          children: content_children,
-        ),
+        child:  
+          Column(
+            crossAxisAlignment:  CrossAxisAlignment.stretch,
+            children: content_children.map((c) => _wrapItem(c, content_padding)).toList(),
+          ),
+        
       );
     } else {
-      // content = Padding(
-      //       padding: content_padding,
-      //       child: Column(
-      //         crossAxisAlignment:  CrossAxisAlignment.stretch,
-      //         children: content_children
-      //       ),
-      // );
-      content = ListView(
+      content = ListView.builder(
+        //ListView는 가로폭이 무한이라 wrap 잘 안먹혀서, 각 item을 감싸는 방식이 안정적
         controller: scroll_controller,
-        children: content_children,
-      );
-    }
+        itemCount: content_children.length,
+        itemBuilder: (_, i) => _wrapItem(content_children[i], content_padding)
+
+          );
+        }
+        /*overlay는 스크롤 밖에서 Stack으로 올림 */
+        final content_with_overlay = WithOverlay(
+          child: content,
+          overlay: widget.content_overlay,
+        );
+
+        /* */
+
+
+    
 
     /*menu대신 임시로 top_bar , top_bar는 공통이니, */
     final Widget top_bar = TopBar(
@@ -181,7 +197,7 @@ class _CommonScaffoldState extends State<CommonScaffold> {
     {
       return CommonScaffoldDesktop(
         top_bar : top_bar,
-        content: content,
+        content: content_with_overlay,
         side_bar : widget.side_bar,
         side_bar_width : side_bar_width,
       );
@@ -189,7 +205,7 @@ class _CommonScaffoldState extends State<CommonScaffold> {
     else if(is_tablet) {
       return CommonScaffoldMobile(
         top_bar: top_bar,
-          content: content,
+          content: content_with_overlay,
           side_bar: widget.side_bar,
           side_bar_width: side_bar_width,
           top_bar_height: top_bar_height,
@@ -199,7 +215,7 @@ class _CommonScaffoldState extends State<CommonScaffold> {
     }
       return CommonScaffoldMobile(
           top_bar: top_bar,
-          content: content,
+          content: content_with_overlay,
           side_bar: widget.side_bar,
           side_bar_width: side_bar_width,
           top_bar_height: top_bar_height,
@@ -214,4 +230,41 @@ class _CommonScaffoldState extends State<CommonScaffold> {
     // Column+Expanded로 뷰포트를 꽉 채우기 형태로 구성 
     // content 자체는 스크롤 하지 않음.
 
-}
+
+
+  /*
+  funcs
+  - _wrapContentMaxWidth
+  - _wrapItem
+   */
+
+  Widget _wrapContentMaxWidth(Widget child) {
+    if(child is FullBleed) return child;
+    //FullBleed이면 부모 폭 제한 무시, 
+    
+    final max_w = widget.content_max_width;
+    if(max_w == null) return child;
+
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth : max_w),
+        child: child,
+      )
+    );
+
+  }
+
+  Widget _wrapItem(Widget child, EdgeInsets content_padding) {
+    // 1) full-bleed면 padding/maxWidth 둘다 적용 안함
+    if(child is FullBleed) return child;
+
+    // 2) 기본은 padding -> maxWidth 순서로 적용
+    return Padding(
+      padding: content_padding,
+      child: _wrapContentMaxWidth(child)
+    );
+  }
+
+
+} //end

@@ -8,12 +8,13 @@ import 'package:nas_blog1/ui/pages/common/widgets/post/post_card.dart';
 class PostGrid extends StatelessWidget {
   final List<PostMeta> posts;
   final void Function(PostMeta post) on_tap;
+  final EdgeInsets padding; //grid padding
+  //패딩의 안쪽 여백 얼마나 둘지를 담는 객체
 
 
   final int? cross_axis_count;
   //화면 별 카드 갯수(원하면 밖에서 강제 가능)
-  final EdgeInsets padding; //grid padding
-  //패딩의 안쪽 여백 얼마나 둘지를 담는 객체
+
 
   /*카드 간격 */
   final double cross_axis_spacing;
@@ -21,6 +22,10 @@ class PostGrid extends StatelessWidget {
 
   /*카드 높이 (PostCard) 높이 맞추기 */
   final double main_axis_extent;
+
+  final double max_tile_width; 
+  //카드 최대 폭: 화면 넓어져도 카드 폭이 이 이상 커지지 않음. 
+
 
   const PostGrid({
     super.key,
@@ -32,20 +37,9 @@ class PostGrid extends StatelessWidget {
     this.main_axis_spacing = 16, //행 간격
     this.main_axis_extent = 270, //카드의 세로 높이
     //카드 높이 일정하게 해서 그리드가 깔끔해지도록  
+    this.max_tile_width =360 //취향값
   });
 
-  /*functions */
-  /*화면 폭에 따라 열 개수 자동 결정(반응형 레이아웃) */
-  int _calc_corss_axis_count(double w) {
-    if(cross_axis_count != null) return cross_axis_count!;
-    //사용자가 프로퍼티로 열갯수를 지정했으면 그 값대로 진행
-    //! : null값이 아님을 보장한다.
-
-    if(w>=1400) return 4;
-    if(w>=1100) return 3;
-    if(w>=768) return 2;
-    return 1;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,11 +56,11 @@ class PostGrid extends StatelessWidget {
       // padding: padding, //gridview의 패딩 값
       padding: const EdgeInsets.only(top: 12, bottom: 80),
 
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: cross,
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: max_tile_width, //폭 고정 핵심
+        mainAxisExtent: main_axis_extent,
         crossAxisSpacing: cross_axis_spacing,
         mainAxisSpacing: main_axis_spacing,
-        mainAxisExtent: main_axis_extent,
       ),
       itemCount : posts.length,
       itemBuilder: (context, index) {
@@ -76,8 +70,27 @@ class PostGrid extends StatelessWidget {
           on_tap:() => on_tap(p),
         );
       }
-
     );
 
   }
+
+
+  /*functions */
+  /*화면 폭에 따라 열 개수 자동 결정(반응형 레이아웃) */
+  int _calc_corss_axis_count(double w) {
+    if(cross_axis_count != null) return cross_axis_count!;
+    //사용자가 프로퍼티로 열갯수를 지정했으면 그 값대로 진행
+    //! : null값이 아님을 보장한다.
+
+    if(w>=1400) return 4;
+    if(w>=1100) return 3;
+    if(w>=768) return 2;
+    return 1;
+  }
+
+
+
+
+
+
 }

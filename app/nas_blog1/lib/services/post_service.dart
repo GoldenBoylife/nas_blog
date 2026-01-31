@@ -129,6 +129,74 @@ class PostService{
     return PostMeta.fromJson(meta_json);
     
   }
+
+  /*update existing Post */
+  static Future<PostMeta> updatePost({
+    required String id,
+    String? title,
+    String? body_markdown,
+    List<String>? tags,
+    String? category_slug,
+    String? thumbnail_rel_url,
+    bool clear_thumbnail = false,
+    PostStatus? status,
+
+  }) async {
+    final payload = <String, dynamic> {
+      if(title != null) 'title' : title,
+      if(body_markdown != null) 'body_markdown': body_markdown,
+      if(tags != null) 'tags': tags,
+      if(category_slug != null) 'category': category_slug,
+
+      if(status != null) 'status' : status.value,
+    
+      if (clear_thumbnail) 'thumbnail': null,
+      if (!clear_thumbnail && thumbnail_rel_url != null) 'thumbnail': thumbnail_rel_url,
+
+    };
+
+    ///아무것도 안바꾸는 호출 방지
+    if(payload.isEmpty) {
+      throw Exception('updatePost payload is empty');
+    }
+
+    final res = await http.patch(
+      Uri.parse('$NAS_BASE_URL/api/posts/$id'),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ADMIN-TOKEN': NAS_ADMIN_,
+      },
+      body: json.encode(payload),
+    );
+
+    if(res.statusCode != 200) {
+      throw Exception(
+        'Failed to update post (status : ${res.statusCode}) ${res.body}',
+      );
+    }
+
+    final Map<String , dynamic> data = json.decode(res.body) as Map<String, dynamic>;
+    final Map<String,dynamic> meta_json = data['post'] as Map<String, dynamic>;
+    return PostMeta.fromJson(meta_json);
+
+  }
+
+  /*delete */
+  static Future<void> deletePost(String id) async {
+    final res = await http.delete(
+      Uri.parse('$NAS_BASE_URL/api/posts/$id'),
+      headers: {
+        'X-ADMIN-TOKEN': NAS_ADMIN_,
+      },
+    );
+
+    if(res.statusCode != 200) {
+      throw Exception(
+        'Failed to delete post (status: ${res.statusCode}) ${res.body}',
+      );
+    }
+  }
+
   
 
-}
+} //end

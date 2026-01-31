@@ -8,18 +8,23 @@ import 'package:nas_blog1/ui/pages/common/theme/text_util.dart';
   /*header Icon widget */
 class _HeaderIcon extends StatelessWidget {
   final IconData icon;
-  const _HeaderIcon(this.icon);
+  final VoidCallback? on_tap;
+  const _HeaderIcon(this.icon, {this.on_tap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        shape: BoxShape.circle,
+    return InkWell(
+      onTap : on_tap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 20),
       ),
-      child: Icon(icon, size: 20),
     );
   }
 }
@@ -28,6 +33,8 @@ class CategorySidebar extends StatefulWidget {
   final List<BlogCategory> categories;
   final String? selected_slug;
   final void Function(String? slug) on_navigate; // null => All(Home)
+  final bool show_all_tile;
+  final VoidCallback? on_home; //홈으로보내는 명시적 콜백 
 
   // B방식: "갱신 버튼" 정도만 넣어도 편해요 (선택)
   final VoidCallback? on_refresh_requested;
@@ -38,6 +45,8 @@ class CategorySidebar extends StatefulWidget {
     required this.selected_slug,
     required this.on_navigate,
     this.on_refresh_requested,
+    this.show_all_tile = true,
+    this.on_home,
   });
 
   @override
@@ -113,10 +122,13 @@ Widget _buildHeader(BuildContext context) {
       // 아이콘 버튼
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: const [
-          _HeaderIcon(Icons.home_outlined),
-          _HeaderIcon(Icons.search),
-          _HeaderIcon(Icons.person_outline),
+        children:  [
+          _HeaderIcon(
+            Icons.home_outlined,
+            on_tap: widget.on_home?? () => widget.on_navigate(null),
+            ),
+          const _HeaderIcon(Icons.search),
+          const _HeaderIcon(Icons.person_outline),
         ],
       ),
 
@@ -262,17 +274,13 @@ Widget _buildSubTile(BlogCategory cat) {
             // const SizedBox(height: 12),
             // const Divider(height: 1),
 
-            _buildAllTile(),
+            if(widget.show_all_tile)
+              _buildAllTile(),
             const SizedBox(height: 8),
-            // Expanded(
-            //   child: ListView(
-            //     children: widget.categories
-            //         .map((c) => _buildCategoryNode(c))
-            //         .toList(),
-            //   )
-            // )
+
             ...widget.categories.map(_buildCategoryNode),
-          ],
+          
+          ]
         ),
       ),
     );

@@ -13,22 +13,22 @@ enum PostStatus{
     switch (this) {
     //여기 thiis는 PostStatus를 선언한 객체 ps.value를 뜻함. 
       case PostStatus.public:
-        return 'Public';
+        return 'public';
       case PostStatus.private:
-        return 'Private';
+        return 'private';
       case PostStatus.removed:
-        return 'Removed';
+        return 'removed';
     }
   }
 /* label getter UI 표시용 문자열 */
   String get label{
     switch(this) {
       case PostStatus.public:
-        return 'Public';
+        return 'public';
       case PostStatus.private:
-        return 'Private';
+        return 'private';
       case PostStatus.removed:
-        return 'Removed';
+        return 'removed';
     }
   }
   
