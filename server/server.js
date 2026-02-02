@@ -32,7 +32,9 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "CHANGE_ME_PLEASE";
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
-app.use("/assets", express.static(ASSETS_DIR));
+app.use("/media", express.static(ASSETS_DIR));
+// app.use("/assets", express.static(ASSETS_DIR));
+
 // serve the static file.
 // when image is  uploaded using "/api/upload" , it use service into "/assets/xxx.ext" automatically.
 //
@@ -363,7 +365,8 @@ app.post("/api/upload", upload.single("file"), async(req,res) => {
         await fs.move(file.path, finalPath, { overwrite: true});
         // temporary saving path -> final saving path
 
-        const publicUrl = `/assets/${finalName}`;
+        const publicUrl = `/media/${finalName}`;
+        //업로드 파일은 /media로 노출
 
         res.json({
                 ok: true,

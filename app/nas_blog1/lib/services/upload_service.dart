@@ -12,7 +12,7 @@ server.js:
 */
 
 class UploadResult {
-  final String url; // "/assets/uuid.png"
+  final String url; // "/media/uuid.png"
   final String filename;
   final String ext; //확장자
 
