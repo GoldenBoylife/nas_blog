@@ -220,6 +220,7 @@ class _EditorPgState extends State<EditorPg> {
           final cat = await CategoryService.createCategory(
             result.name,
             parent_id : result.parent_id,
+            icon_key: result.icon_key,
           );
           //서버에 카테고리 생성 요청 -> 성공 시 cat 반환한다. 
           //이 때 id, slug, name이 서버 기준으로 확정됨.
@@ -241,6 +242,8 @@ class _EditorPgState extends State<EditorPg> {
             _error_msg = null;
             //만든 카테고리 녀석을 , 선택 상태로 가자. 
           });
+          await _fetchCategories();
+          //서버 기준으로 다시 동기화 
         } catch(e) {
           if(!mounted) return;
           setState(() => _error_msg = 'Create category error: $e');

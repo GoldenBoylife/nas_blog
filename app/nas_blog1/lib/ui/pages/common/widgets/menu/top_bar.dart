@@ -47,10 +47,10 @@ class TopBar extends StatelessWidget {
             ),
           if(show_hamburger) const SizedBox(width: 8),
           // Text(
-          //   "Dr.GoldenBoy Lap",
+          //   "Dr.GoldenBoy Lab",
           //   style: TextStyle
           // )
-          Text("Dr.GoldenBoy Lap",
+          Text("Dr.GoldenBoy Lab",
               style: TextUtil.get18(
                 context,
                 _icon_color,
