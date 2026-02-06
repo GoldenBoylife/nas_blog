@@ -12,12 +12,15 @@ import 'package:nas_blog1/services/category_service.dart';
 import 'package:nas_blog1/services/category_tree_builder.dart';
 import 'package:nas_blog1/services/post_service.dart';
 import 'package:nas_blog1/ui/common_widgets/full_bleed.dart';
+import 'package:nas_blog1/ui/pages/common/theme/calc_horizontal_padding.dart';
 import 'package:nas_blog1/ui/pages/common/theme/text_util.dart';
 
 import 'package:nas_blog1/ui/pages/common/widgets/pageWidget/common_scaffold.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/post/post_card_grid.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/post/post_grid.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/sidebar/category_sidebar.dart';
+import 'package:nas_blog1/ui/pages/common/widgets/sidebar/sidebar.dart';
+import 'package:nas_blog1/ui/pages/common/widgets/sidebar/sidebar_host.dart';
 
 import 'package:nas_blog1/ui/pages/editor/editor_pg.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/page_hero/page_hero.dart';
@@ -43,12 +46,11 @@ class _HomePgState extends State<HomePg> {
   List<BlogCategory> _category_tree = [];
   List<BlogCategory> _categories= [];
   String? _selected_slug; //null이면 All
-
+  bool _cats_loading = true;
+  String? _cats_error;
 
   late Future<List<PostMeta>> _future_posts;
 
-  bool _cats_loading = true;
-  String? _cats_error;
   
 
   @override
@@ -56,7 +58,7 @@ class _HomePgState extends State<HomePg> {
     // TODO: implement initState
     super.initState();
     _future_posts = PostService.fetchPosts();
-    _fetchCategories();
+    _fetchCategories(); // ✅ 이거 반드시
   }
 
 
@@ -65,10 +67,18 @@ class _HomePgState extends State<HomePg> {
 
     
     final screen_model = _calcScreenModel(context);
-    final padding = _calcHorizontalPadding(screen_model, MediaQuery.of(context).size.width);
+    final padding = calcHorizontalPadding(screen_model, MediaQuery.of(context).size.width);
 
     /*sidebar 위젯 만들기 (카테고리 로딩/에러 처리 포함) */
-    Widget? side_bar = _buildSidebar(context);
+    Widget? side_bar = SidebarHost(
+                            selected_slug:  null,
+                            show_all_tile : false,
+                            on_navigate: (slug) {
+                              if(slug == null) Beamer.of(context).beamToNamed('/');
+                              else Beamer.of(context).beamToNamed('/category/${Uri.encodeComponent(slug)}');
+                            },
+          );
+
     
     final h  = MediaQuery.of(context).size.height;
     final hero_h = (h*0.22) .clamp(120.0, 220.0); //취향값
@@ -97,7 +107,6 @@ class _HomePgState extends State<HomePg> {
 
   /*
   funcs
-  - _fetchCategories
   - _refreshPosts
   - _onSelectCategory
   - _calcCrossAxisCount
@@ -112,44 +121,6 @@ class _HomePgState extends State<HomePg> {
 
   */
 
-
-    /*카테고리 목록을 NAS에서 다시 받아와서 화면 상태를 업뎃함 */
-  Future<void>  _fetchCategories() async{
-    
-    // setState(() {
-    //   _cats_loading = true;
-    //   _cats_error = null;
-    // });
-    try {
-      final flat = await CategoryService.fetchCategories();
-      final tree  =  CategoryTreeBuilder.build(flat);
-      //서버에서 받아옴.
-      if(!mounted) return;
-      //await하는 동안 화면이 사라질수 있으니, 안전장치
-
-      /*받아온 상태로 업데이트 진행 */
-      setState(() {
-        _category_tree = tree;
-        // _categories = cats;
-        _cats_loading = false;
-
-        /*선택된 slug가 더이상 없으면 All로 */
-        //선택된 slug가 아직 유효한지 확인
-        // 예를 들어서 eidtor모드에서 robotics 카테고리를 삭제하면, 더이상 목록에 없게 됨.
-        if(_selected_slug  != null && 
-            _categories.indexWhere((c) => c.slug == _selected_slug) <0) {
-            _selected_slug = null;
-          }
-      });
-    } catch (e) {
-      if(!mounted) return;
-      setState(() {
-        _cats_loading = false;
-        _cats_error = '$e';
-      });
-
-    }
-  }
 
 
   /*post목록을 다시 불러오도록 Future를 새로 만들어 UI 갱신 */
@@ -228,65 +199,6 @@ class _HomePgState extends State<HomePg> {
         );
   }
 
-  /*UI helpers 
-  // widget을 직접 그리지는 않지만 UI를 만들기 쉽게 도와주는 보조 코드
-  // history : 
-    1. buildPosts로 스크롤을 homPg, commonScaffold 둘다 하고 있었음. 이러면 팅김 그래서
-    
-    2. buildPostsGrid 
-    commonScaffold의  스크롤 기능을 각 페이지들(homePg)에서 할수 잇도록 바꾸겟음.그래서 buildPostsGrid로 바꿈
-    이렇게 하면 homePg에서만 스크롤 사용하므로 팅김을 방지할 수 있음
-  */
-  // Widget _buildPostsGrid(List<PostMeta> posts) {
-  //   // UI에서 category 필터링(서버 필터가 아직 없을 때) 
-  //   final filtered = (_selected_slug == null) 
-  //     ? posts
-  //     : posts.where((p) => p.category == _selected_slug).toList();
-  //   if(filtered.isEmpty) {
-  //     return const Center(child: Text('No posts'));
-  //   }
-
-  //   final w = MediaQuery.of(context).size.width;
-  //   final cross = _calcCrossAxisCount(w);
-  //   final show_chip = ( w >= 360); //기준 취향
-
-                              
-                          
-  //   return GridView.builder(
-      
-  //     padding: const EdgeInsets.only(top: 12, bottom :80),
-  //     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-  //       crossAxisCount: cross,
-  //       //화면 너비에 따라서 한줄에 보여줄 카드의 갯수 정함
-  //       crossAxisSpacing: 16,
-  //       mainAxisSpacing: 16,
-  //       mainAxisExtent: 270, //카드 높이 고정(썸네일 150 + 아래영역)
-        
-  //       ),
-
-  //     itemCount: filtered.length,
-  //     // separatorBuilder: (_,__) => const Divider(height :1), 
-  //     itemBuilder: (context, index) {
-  //       final p = filtered[index];
-  //       return PostCard(
-  //         post: p,
-  //         //기존 ListTile은 빠르게 리스트 만들기 위한 거고, 
-  //         //이 InkWell은 터치 효과, 클릭 처리를 위한 것이다. 
-  //         //이제 inpa처럼  썸네일 크기, 카드를 직접 제작하기위해서 이걸로 바꿈. 
-  //         on_tap: () {
-  //           Navigator.push(
-  //             context,
-  //             MaterialPageRoute(
-  //               builder: (_) => PostPg(post_id : p.id)
-  //               )
-  //           );
-  //         },
-  //       );
-  //     }
-      
-      
-  //   );
-  // }
 
   // /*slug 조건에 맞는 액자들만 골라서 PostGrid 벽 가장자리에 걸어둔다.  */
   Widget _BuildMainContentExpanded() {
@@ -363,47 +275,6 @@ class _HomePgState extends State<HomePg> {
     //객체가 하나 생성되어 리턴된다.
   }
 
-  double _calcHorizontalPadding(ScreenModel sm, double width) {
-    /*대충 inpa 느낌, desktop은 좌우 여백 조금 */
-    if(sm.web) return 16;
-    if(sm.tablet) return 12;
-    return 10;
-  }
-  Widget? _buildSidebar(BuildContext context) {
-    if(_cats_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if(_cats_error != null) {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Category load error:\n$_cats_error'),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: _fetchCategories,
-              child: const Text('Retry')
-              )
-            ]
-          
-        )
-      );
-    }
-    return CategorySidebar(
-      categories: _category_tree,
-      selected_slug : _selected_slug,
-      show_all_tile: false,
-      on_navigate: (slug) {
-        if(slug == null) 
-          Beamer.of(context).beamToNamed('/');
-        else 
-          Beamer.of(context).beamToNamed('/category/$slug');
-      },
-      on_refresh_requested: _fetchCategories,
-    );
-  }
-  
 
 
   List<Widget> _topActions() {
@@ -448,7 +319,6 @@ class _HomePgState extends State<HomePg> {
                     if (!context.mounted) return;
 
                     if (changed == true) {
-                      _fetchCategories();
                       _refreshPosts();
                     }
                   },
@@ -475,7 +345,36 @@ class _HomePgState extends State<HomePg> {
 
 
 
+Future<void> _fetchCategories() async {
+  setState(() {
+    _cats_loading = true;
+    _cats_error = null;
+  });
 
+  try {
+    final flat = await CategoryService.fetchCategories();
+    final tree = CategoryTreeBuilder.build(flat);
+
+    if (!mounted) return;
+    setState(() {
+      _categories = flat;
+      _category_tree = tree;
+      _cats_loading = false;
+
+      // 선택된 slug가 더이상 존재하지 않으면 All로
+      if (_selected_slug != null &&
+          _categories.indexWhere((c) => c.slug == _selected_slug) < 0) {
+        _selected_slug = null;
+      }
+    });
+  } catch (e) {
+    if (!mounted) return;
+    setState(() {
+      _cats_loading = false;
+      _cats_error = '$e';
+    });
+  }
+}
 
 
 

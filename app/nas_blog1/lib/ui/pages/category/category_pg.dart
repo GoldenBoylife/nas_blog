@@ -5,10 +5,13 @@ import 'package:nas_blog1/models/screen_model.dart';
 import 'package:nas_blog1/services/category_service.dart';
 import 'package:nas_blog1/services/post_service.dart';
 import 'package:nas_blog1/ui/common_widgets/full_bleed.dart';
+import 'package:nas_blog1/ui/pages/common/theme/calc_horizontal_padding.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/pageWidget/common_scaffold.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/page_hero/page_hero.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/post/post_grid.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/sidebar/category_sidebar.dart';
+import 'package:nas_blog1/ui/pages/common/widgets/sidebar/sidebar.dart';
+import 'package:nas_blog1/ui/pages/common/widgets/sidebar/sidebar_host.dart';
 import 'package:nas_blog1/ui/pages/post/post_pg.dart';
 
 import '../../../models/blog_category.dart';
@@ -26,6 +29,11 @@ class CategoryPg extends StatefulWidget {
 class _CategoryPgState extends State<CategoryPg> {
   late Future<List<PostMeta>> _future_posts;
   late Future<List<BlogCategory>> _future_cats;
+
+
+    List<BlogCategory> _category_tree = [];
+    bool _cats_loading = true;
+
 
   @override
   void initState() {
@@ -72,16 +80,10 @@ class _CategoryPgState extends State<CategoryPg> {
     return ScreenModel(web, tablet, mobile);
   }
 
-  double _calc_horizontal_padding(ScreenModel sm) {
-    if (sm.web) return 16;
-    if (sm.tablet) return 12;
-    return 10;
-  }
-
   @override
   Widget build(BuildContext context) {
     final screen_model = _calc_screen_model(context);
-    final padding = _calc_horizontal_padding(screen_model);
+    final padding = calcHorizontalPadding(screen_model, MediaQuery.of(context).size.width);
 
     return FutureBuilder<List<BlogCategory>>(
       future: _future_cats,
@@ -90,24 +92,15 @@ class _CategoryPgState extends State<CategoryPg> {
           return const Center(child: CircularProgressIndicator());
         }
         final categories = cat_snap.data!;
+        final side_bar = SidebarHost(
+                                    selected_slug:  null,
+                                    show_all_tile : false,
+                                    on_navigate: (slug) {
+                                      if(slug == null) Beamer.of(context).beamToNamed('/');
+                                      else Beamer.of(context).beamToNamed('/category/${Uri.encodeComponent(slug)}');
+                                    },
+                  );
 
-        final side_bar = CategorySidebar(
-          categories: categories,
-          selected_slug: widget.slug, 
-          show_all_tile:  true,
-          on_navigate: (slug) {
-            if (slug == null) {
-              Beamer.of(context).beamToNamed('/');
-            } else {
-              Beamer.of(context).beamToNamed('/category/$slug');
-            }
-          },
-          on_refresh_requested: () {
-            setState(() {
-              _future_cats = CategoryService.fetchCategories();
-            });
-          },
-        );
 
         return CommonScaffold(
           use_page_scroll: false,
@@ -130,3 +123,4 @@ class _CategoryPgState extends State<CategoryPg> {
     );
   }
 }
+

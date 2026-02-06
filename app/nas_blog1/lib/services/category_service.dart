@@ -38,14 +38,23 @@ class CategoryService {
   }
 
   /*카테고리 새로 만들기 */
-   static Future<BlogCategory> createCategory(String name, {String? parent_id}) async {
+   static Future<BlogCategory> createCategory(
+                                                String name, 
+                                                {
+                                                  String? parent_id, 
+                                                  String? icon_key //260205추가
+                                                }) async {
     final trimmed = name.trim();
     if(trimmed.isEmpty) {
       throw Exception('Category name is empty');
     }
 
-    final Map<String, dynamic> payload = { 'name': trimmed};
-    if(parent_id != null ) payload['parent_id'] = parent_id;
+    final Map<String, dynamic> payload = { 
+      'name': trimmed,
+      'parent_id': parent_id,
+      'icon_key': icon_key
+      };
+    // if(parent_id != null ) payload['parent_id'] = parent_id;
 
     final res = await http.post(
       Uri.parse('$NAS_BASE_URL/api/categories'),
@@ -53,7 +62,7 @@ class CategoryService {
         'Content-Type': 'application/json',
         'X-ADMIN-TOKEN': NAS_ADMIN_,
       },
-      body: json.encode({'name':trimmed}), //payload 보내기
+      body: json.encode(payload), //payload 보내기
     );
 
 
@@ -66,6 +75,7 @@ class CategoryService {
 
     //형식:  { ok : true, category: {...}, existed: bool? }
     final Map<String, dynamic> data = json.decode(res.body) as Map<String,dynamic>;
+    
 
     return BlogCategory.fromJson(
       data['category'] as Map<String, dynamic>,

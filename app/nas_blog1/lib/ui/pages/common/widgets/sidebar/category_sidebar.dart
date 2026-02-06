@@ -127,8 +127,8 @@ Widget _buildHeader(BuildContext context) {
             Icons.home_outlined,
             on_tap: widget.on_home?? () => widget.on_navigate(null),
             ),
-          const _HeaderIcon(Icons.search),
-          const _HeaderIcon(Icons.person_outline),
+          // const _HeaderIcon(Icons.search),
+          // const _HeaderIcon(Icons.person_outline),
         ],
       ),
 

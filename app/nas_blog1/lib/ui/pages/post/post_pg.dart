@@ -22,6 +22,7 @@ import 'package:nas_blog1/ui/pages/common/dialogs/admin_login_dialog.dart';
 import 'package:nas_blog1/ui/pages/common/state/admin_gate.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/pageWidget/common_scaffold.dart';
 import 'package:nas_blog1/ui/pages/common/widgets/sidebar/category_sidebar.dart';
+import 'package:nas_blog1/ui/pages/common/widgets/sidebar/sidebar_host.dart';
 import 'package:nas_blog1/ui/pages/editor/editor_pg.dart';
 import 'package:nas_blog1/ui/pages/post/sections/post_bottom_sections.dart';
 import 'package:nas_blog1/ui/pages/post/widgets/post_hero_header.dart';
@@ -52,7 +53,6 @@ class _PostPgState extends State<PostPg> {
     /*sidebar용 카테고리 */
     List<BlogCategory> _category_tree = [];
     bool _cats_loading = true;
-    String? _cats_error;
 
     /*TOC overlay */
     bool _toc_open = false;
@@ -63,7 +63,6 @@ class _PostPgState extends State<PostPg> {
     // TODO: implement initState
     super.initState();
 		_future_post = PostService.fetchPost(widget.post_id);
-    _fetchCategories();
   }
 
 	
@@ -74,12 +73,23 @@ class _PostPgState extends State<PostPg> {
     final screen_model = _calcScreenModel(context);
     final width = MediaQuery.of(context).size.width;
     final padding = _calcHorizontalPadding(screen_model, width);
-    final side_bar = _buildSidebar(context);
+    
 
     return FutureBuilder<PostDetail>(
 			future: _future_post,
 			builder: (context, snapshot) {
+
+        /* step  loading */
 				if(snapshot.connectionState == ConnectionState.waiting) {
+          final side_bar = SidebarHost(
+                            selected_slug:  null,
+                            show_all_tile : false,
+                            on_navigate: (slug) {
+                              if(slug == null) Beamer.of(context).beamToNamed('/');
+                              else Beamer.of(context).beamToNamed('/category/${Uri.encodeComponent(slug)}');
+                            },
+          );
+
           /*loading중 대처 */
 					return CommonScaffold(
 						use_page_scroll: true,
@@ -100,8 +110,16 @@ class _PostPgState extends State<PostPg> {
 
 					);
 				}
-        /*error시 대처 */
+        /*step 애러  */
 				if(snapshot.hasError || !snapshot.hasData) {
+          final side_bar = SidebarHost(
+                            selected_slug:  null,
+                            show_all_tile : false,
+                            on_navigate: (slug) {
+                              if(slug == null) Beamer.of(context).beamToNamed('/');
+                              else Beamer.of(context).beamToNamed('/category/${Uri.encodeComponent(slug)}');
+                            },
+          );
 					return CommonScaffold(
 						use_page_scroll: true,
             content_max_width:  920,
@@ -121,9 +139,17 @@ class _PostPgState extends State<PostPg> {
 					);
 				}
 			
+      /*step 성공 */
 			final post = snapshot.data!;
 			final meta = post.meta;
-
+      final side_bar = SidebarHost(
+                        selected_slug:  meta.category, //여기서 드디어 선택 표시 가능
+                        show_all_tile : false,
+                        on_navigate: (slug) {
+                          if(slug == null) Beamer.of(context).beamToNamed('/');
+                          else Beamer.of(context).beamToNamed('/category/${Uri.encodeComponent(slug)}');
+                        },
+      );
 			/*inpa style layout */
 			return CommonScaffold(
         use_page_scroll: true,
@@ -207,24 +233,6 @@ class _PostPgState extends State<PostPg> {
   */
 
 
-  Future<void> _fetchCategories() async{
-    try {
-      final flat = await CategoryService.fetchCategories();
-      final tree = CategoryTreeBuilder.build(flat);
-      if(!mounted) return;
-      setState(() {
-        _category_tree = tree;
-        _cats_loading = false;
-        _cats_error = null;
-      });  
-    } catch (e) {
-      if(!mounted) return;
-      setState(() {
-        _cats_loading = false;
-        _cats_error = '$e';
-      });
-    }
-  }
 
 
   void _refreshThisPosts() {
@@ -248,45 +256,6 @@ class _PostPgState extends State<PostPg> {
     if( sm.tablet) return 12;
     return 10;
 
-  }
-
-  Widget? _buildSidebar(BuildContext context) {
-    if(_cats_loading) {
-      return const  Center(child: CircularProgressIndicator());
-    }
-    if(_cats_error !=null) {
-      return Padding( 
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Category load error:\n$_cats_error'),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: _fetchCategories,
-              child: const Text('Retry'),
-
-            )
-          ]
-        )
-      );
-    }
-    return CategorySidebar(
-      categories: _category_tree,
-      selected_slug : null, // PostPg에서는 선택 상태를 굳이 유지 안해도 됨. 
-      show_all_tile:  false,
-      on_navigate: (slug) {
-        if(slug == null) 
-          Beamer.of(context).beamToNamed(RoutePage.home);
-          //home_pg로
-        else 
-          Beamer.of(context).beamToNamed('/category/$slug');
-      
-      },
-      on_refresh_requested: _fetchCategories
-
-
-    );
   }
 
 
@@ -330,7 +299,6 @@ List<Widget> _topActions(String current_post_id) {
                     ));
                     if(!context.mounted) return;
                     if(changed == true) {
-                      _fetchCategories();
                       _refreshThisPosts();
                     }
                 }

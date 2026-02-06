@@ -27,7 +27,7 @@ const CATEGORIES_FILE = path.join(__dirname, "categories.json");
 
 
 // 간단한 토큰 보안 (너만 아는 비번)
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "CHANGE_ME_PLEASE";
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "qwerhh33";
 
 const app = express();
 app.use(cors());
@@ -292,17 +292,23 @@ app.get("/api/categories", async(req,res) => {
 });
 
 // 5) 카테고리 추가 (관리자만)
+// 라우트 등록 
 app.post("/api/categories", async (req, res) => {
   try {
-    const token = req.header("X-ADMIN-TOKEN");
+    const token = req.header("X-ADMIN-TOKEN"); //관리자 토큰 받기
     if (token !== ADMIN_TOKEN) {
       return res.status(401).json({ error: "unauthorized" });
     }
 
-    const {name,parent_id = null} = req.body;
-    const nameRaw = (name || "").trim();
+    /*요청 body에서 값 꺼내기 + 기본값 */
+    const {name,parent_id = null, icon_key = null } = req.body; //icon이 key를 받을 수 있도록 추가. 
+    //260204: const {name,parent_id = null} = req.body; 
+    //body(json)에서 name,parent_id,icon_key를 꺼냄.  없을시 기본값 null
+    //client는 {"name":"SLAM", "parent_id":null, "icon_key": "robot"} 이렇게 보냄. 
+    const nameRaw = (name || "").trim(); //이름을 안전하게 정리.
     if (!nameRaw) {
       return res.status(400).json({ error: "name_required" });
+      //이름 비어 있으면 요청이 잘못되었으니 400반환
     }
 
     const slug =
@@ -312,7 +318,8 @@ app.post("/api/categories", async (req, res) => {
         .replace(/[^a-z0-9-_]/g, "")  // 슬러그에 안 맞는 문자 제거
       || uuidv4();
 
-    let cats = await readCategories();
+    let cats = await readCategories(); 
+    //categories.json 에서 카테고리 목록 읽어옴. 
 
     // 이름 중복 체크 (대소문자 무시)
     const exists = cats.find(
@@ -327,13 +334,17 @@ app.post("/api/categories", async (req, res) => {
       id: uuidv4(),
       name: nameRaw,
       slug,
-      parent_id
+      parent_id,
+      icon_key: icon_key || null, //260205 추가
     };
 
     cats.push(cat);
+    //새로운 카테고리니까 cats 배열에 저장하고 
     await writeCategories(cats);
+    //categories.json에 쓰기
 
     res.json({ ok: true, category: cat });
+    //카테고리 생성 알림. 
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "failed_to_create_category" });
