@@ -29,9 +29,12 @@ class PreviewDialog{
                 Expanded(
                   child: SingleChildScrollView(
                     // child: SelectableText(body.isEmpty ? '(No content)' : body),
-                    child: BlogMarkdownBody(data: body.isEmpty ? '(No content)' : body),
+                    child: BlogMarkdownBody(
+                      data: (body.isEmpty ? '(No content)' : body)
+                    .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '  \n'),
                   )
                 )
+                ),
               ]
             )
           )

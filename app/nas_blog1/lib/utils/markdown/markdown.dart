@@ -18,6 +18,7 @@ fm.MarkdownStyleSheet blogMarkdownStyle(BuildContext context) {
   final base = fm.MarkdownStyleSheet.fromTheme(Theme.of(context));
   return base.copyWith(
     p: const TextStyle(fontSize: 16, height: 1.6),
+    pPadding: const EdgeInsets.only(bottom: 20), //enter key
     h1: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
     h2: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold), //22
     h3: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), //20
@@ -25,10 +26,49 @@ fm.MarkdownStyleSheet blogMarkdownStyle(BuildContext context) {
     h5: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold), //20
     h6: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold), //20
 
+    /*for inline CODE part style */
     code: const TextStyle(
-      fontFamily: 'monospace',
-      fontSize:14,
-    )
+      fontFamily: 'JetBrainsMono',
+      fontSize:13.5,
+      height: 1.55,
+      color: Color(0xFF111827),
+      fontWeight: FontWeight.w500,
+    ),
+    codeblockPadding: const EdgeInsets.symmetric(
+      horizontal: 16,
+      vertical: 14,
+    ),
+    codeblockDecoration: BoxDecoration(
+      color: const Color(0xFFF9F9F9),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: const Color(0xFFEAEAEA),
+        width: 1,
+      )
+    ),
+// blockquote도 같이 조금 예쁘게
+    blockquote: const TextStyle(
+      fontSize: 15,
+      height: 1.6,
+      color: Color(0xFF475569),
+      fontStyle: FontStyle.italic,
+    ),
+    blockquoteDecoration: BoxDecoration(
+      color: Color(0xFFF8FAFC),
+      border: Border(
+        left: BorderSide(
+          color: Color(0xFFCBD5E1),
+          width: 4,
+        ),
+      ),
+    ),
+
+    // 리스트 간격 조금 여유
+    listBullet: const TextStyle(
+      fontSize: 16,
+      color: Color(0xFF374151),
+    ),
+
   );
 }
 
@@ -77,6 +117,7 @@ class BlogMarkdownScroll extends StatelessWidget {
       shrinkWrap : shrink_wrap,
       selectable: selectable,
       styleSheet: style_sheet ?? blogMarkdownStyle(context),
+      softLineBreak: true,
     );
   }
 }
@@ -107,6 +148,7 @@ class BlogMarkdownBody extends StatelessWidget {
         return fm.MarkdownBody(
           data: processed,
           styleSheet: style,
+          softLineBreak: true,
 
           // 🔹 이미지 렌더링 커스터마이즈
 imageBuilder: (uri, title, alt) {
