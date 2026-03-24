@@ -48,6 +48,21 @@ class CommonScaffoldMobile extends StatelessWidget {
             height: top_bar_height,
             child: top_bar,
           ),
+            // dim + tap to close
+            /*when the sidebar(drawer) opens, semi-transparent layer is displayed over the main body content*/
+            if(use_overlay_drawer && is_drawer_open) 
+              Positioned.fill(
+                top: top_bar_height,
+                child: GestureDetector(
+                  
+                  child: Container(color: Colors.black.withOpacity(0.35)),
+                  //배경 어둡게, 본문 클릭 막기,
+                  onTap: on_close_drawer,
+                  //사용자가 어두운 부분을 탭하면 drawer가 닫히게,
+                  
+                )
+              ),
+              
           /*overay sidebar */
           // sidebar slide 애니메이션~
           if(use_overlay_drawer)
@@ -67,21 +82,7 @@ class CommonScaffoldMobile extends StatelessWidget {
                 child: side_bar!,  // null이 아니라고 확신!, null-safety라함.
               )
             ),
-            // dim + tap to close
-            /*when the sidebar(drawer) opens, semi-transparent layer is displayed over the main body content*/
-            if(use_overlay_drawer && is_drawer_open) 
-              Positioned.fill(
-                top: top_bar_height,
-                child: GestureDetector(
-                  
-                  child: Container(color: Colors.black.withOpacity(0.35)),
-                  //배경 어둡게, 본문 클릭 막기,
-                  onTap: on_close_drawer,
-                  //사용자가 어두운 부분을 탭하면 drawer가 닫히게,
-                  
-                )
-              ),
-              
+
         ]
       )
     );

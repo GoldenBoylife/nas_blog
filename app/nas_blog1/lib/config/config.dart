@@ -9,4 +9,4 @@ import 'package:flutter/foundation.dart';
 const String NAS_BASE_URL = kReleaseMode  ? 'https://goldenboy.co.kr' : 'http://goldenboy.co.kr';
 const String NAS_ADMIN_ = 'qwerhh33';
 
-const String ADMIN_PASS = '12341234';
+const String ADMIN_PASS = 'qwerhh33';

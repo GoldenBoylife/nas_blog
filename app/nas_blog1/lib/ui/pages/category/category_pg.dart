@@ -44,31 +44,38 @@ class _CategoryPgState extends State<CategoryPg> {
 
 
   Widget _BuildMainContentExpanded() {
-    return Expanded(
-      child: FutureBuilder<List<PostMeta>> (
-        future : _future_posts,
-        builder: (context, snap) {
-          if(snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if(snap.hasError || !snap.hasData) {
-            return Center(child: Text('Error: ${snap.error}'));
-
-          }
-          final posts = snap.data!;
-          /*All이면 전체, 아니면 필터된 목록, but 여기는 그냥 카테고리 있으므로,*/
-          final filtered = posts.where((p) => p.category == widget.slug).toList();
-            return PostGrid(
-              posts: filtered,
-              on_tap: (p) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => PostPg(post_id: p.id))
-                  );
-                }
-              );
-        },
-      )
+    return FutureBuilder<List<PostMeta>> (
+      future : _future_posts,
+      builder: (context, snap) {
+        if(snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if(snap.hasError || !snap.hasData) {
+          return Center(child: Text('Error: ${snap.error}'));
+    
+        }
+        final posts = snap.data!;
+        /*fix_sidebarActive: 로컬에서는 grid card뜨는데 배포판에서는 안뜨므로, 확인위해서 print */
+        print('CATEGORY PAGE');
+        print('widget.slug = ${widget.slug}');
+        print('posts.length = ${posts.length}');
+        for(final p in posts) {
+          print('post: title=${p.title}, category=${p.category}');
+        }
+        /*All이면 전체, 아니면 필터된 목록, but 여기는 그냥 카테고리 있으므로,*/
+        final filtered = posts.where((p) => p.category == widget.slug).toList();
+          return PostGrid(
+            posts: filtered,
+            on_tap: (p) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => PostPg(post_id: p.id))
+                );
+              }
+            );
+ 
+          
+      },
     );
   }
         
