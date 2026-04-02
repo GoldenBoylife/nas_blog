@@ -327,6 +327,7 @@ class _EditorPgState extends State<EditorPg> {
 
       /* 2) image option dialogue*/
       final opt = await showDialog<ImageInsertOption>(
+        //ImageInsertOption에서 다이얼로그가 완료 되면 opt로 그 결과값이 들어온다. 그래서 size, align, caption도 존재할것임.
         context: context,
         builder: (_) => const ImageOptionDialog(),
         //팝업이 뜬다. 
@@ -334,10 +335,23 @@ class _EditorPgState extends State<EditorPg> {
         // 원래는 context를 인자로 쓰는데, 내부에서 직접 자체 UI를 그리면 굳이 필ㅇ료 없음. 
         // 써야 할때는 홤녀 크기에 따라서 다르게 해야 할때,
        );
-       if(opt == null) return;
+      if(opt == null) return;
 
-       final alt= file.name.isNotEmpty ? file.name : 'media';
-       final title_meta = 'size=${opt.size};align=${opt.align}';
+      final alt= file.name.isNotEmpty ? file.name : 'media';
+      final encoded_caption =  opt.caption == null 
+      ? null
+      : Uri.encodeComponent(opt.caption!);
+      //ImageInsertOption에서 caption이라는 인자가존재.
+      //캡션 문자열을 Uri에 안전하게 넣을수 있는 형태로 변환해서 넣음. 
+      //예를 들어서, "my page" 면 인코딩 후 "my%20page"이런식으로 바뀜.
+
+      //  final title_meta = 'size=${opt.size};align=${opt.align}';
+      final title_meta = (encoded_caption != null&& encoded_caption.isNotEmpty)
+            ? 'size=${opt.size};align=${opt.align};caption=$encoded_caption'
+            : 'size=${opt.size};align=${opt.align}';
+       //when I insert an image, I set the option correctly. but they are not applied when it is rendered.
+
+
 
 
        /* 3) insert markdown*/

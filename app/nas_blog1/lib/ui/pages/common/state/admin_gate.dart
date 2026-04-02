@@ -6,7 +6,11 @@ class AdminGate{
   // is_admin.value가 바뀌면, ValueListenableBuilder같은 위젯이 자동으로 다시 build됨.
   // 즉 전역 bool 하나(로그인 여부)를 UI랑 연결하기에 간단하고 가볍다.
 
-  static void login() => is_admin.value = true;
+  static void login() {
+    debugPrint('AdminGate.login before=${is_admin.value}');
+     is_admin.value = true;
+     debugPrint('AdminGate.login after=${is_admin.value}');
+  }
   static void logout() => is_admin.value = false;
 
 }

@@ -18,10 +18,10 @@ fm.MarkdownStyleSheet blogMarkdownStyle(BuildContext context) {
   final base = fm.MarkdownStyleSheet.fromTheme(Theme.of(context));
   return base.copyWith(
     p: const TextStyle(fontSize: 16, height: 1.6),
-    h1: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-    h2: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold), //22
-    h3: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), //20
-    h4: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), //20
+    h1: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold,color: Color.fromARGB(255, 168, 98, 6) ),
+    h2: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold,color: Color.fromARGB(255, 57, 91, 241)), //22
+    h3: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold,color: Color.fromARGB(255, 171, 39, 197)), //20
+    h4: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 29, 219, 38)), //20
     h5: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold), //20
     h6: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold), //20
 
@@ -109,10 +109,15 @@ class BlogMarkdownBody extends StatelessWidget {
           styleSheet: style,
 
           // 🔹 이미지 렌더링 커스터마이즈
-imageBuilder: (uri, title, alt) {
+imageBuilder: (uri, alt, title) {
   final meta = _parseImageMeta(title);
   final widthFactor = _sizeToFactor(meta.size);
   final alignment = _alignToAlignment(meta.align);
+
+  debugPrint('alt=$alt');
+  debugPrint('title=$title');
+  debugPrint('meta.size=${meta.size}, meta.align=${meta.align}');
+  debugPrint('maxWidth=$maxWidth');
 
   double? imgWidth;
   if (maxWidth.isFinite) {
@@ -167,17 +172,44 @@ imageBuilder: (uri, title, alt) {
     );
   }
 
-  Widget img = Align(
-    alignment: alignment,
-    child: thumbImage,
-  );
 
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: img,
-  );
+final availableWidth =
+    maxWidth.isFinite ? maxWidth : MediaQuery.of(context).size.width;
+final targetWidth = availableWidth * widthFactor;
+
+return Padding(
+  padding: const EdgeInsets.symmetric(vertical: 8),
+  child: SizedBox(
+    width: double.infinity,
+    child: Align(
+      alignment: alignment,
+      child: SizedBox(
+        width: targetWidth,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            thumbImage,
+            if (meta.caption != null && meta.caption!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                meta.caption!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Color.fromARGB(255, 88, 88, 88),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
+  ),
+);
+
+
 },
-
           // 🔹 링크 클릭 처리 (유튜브는 다이얼로그, 나머지는 브라우저)
           onTapLink: (text, href, title) async {
             if (href == null) return;
@@ -197,25 +229,29 @@ imageBuilder: (uri, title, alt) {
             }
           },
         );
+      
       },
     );
   }
 }
 
+
 /// title 문자열에서 size/align 정보 꺼내기
 class _ImageMeta {
   final String size;   // small, medium, large, full
   final String align;  // left, center, right
-  _ImageMeta({required this.size, required this.align});
+  final String? caption;
+  _ImageMeta({required this.size, required this.align,  this.caption});
 }
 
 _ImageMeta _parseImageMeta(String? title) {
   // 기본값
   String size = 'medium';
   String align = 'center';
+  String? caption;
 
   if (title == null || title.isEmpty) {
-    return _ImageMeta(size: size, align: align);
+    return _ImageMeta(size: size, align: align, caption: caption);
   }
 
   // "size=medium;align=center" 같은 형식 파싱
@@ -230,25 +266,27 @@ _ImageMeta _parseImageMeta(String? title) {
       size = value;
     } else if (key == 'align') {
       align = value;
+    } else if (key == 'caption') {
+      caption = Uri.decodeComponent(value);
     }
   }
 
-  return _ImageMeta(size: size, align: align);
+  return _ImageMeta(size: size, align: align, caption: caption);
 }
 
 /// 사이즈 문자열을 0~1.0 스케일로 변환
 double _sizeToFactor(String size) {
   switch (size) {
     case 'small':
-      return 0.3;
+      return 0.1;
     case 'medium':
-      return 0.6;
+      return 0.5;
     case 'large':
-      return 0.9;
+      return 0.7;
     case 'full':
       return 1.0;
     default:
-      return 0.6;
+      return 0.5;
   }
 }
 

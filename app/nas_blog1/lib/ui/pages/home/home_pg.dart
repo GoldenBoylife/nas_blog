@@ -427,10 +427,16 @@ class _HomePgState extends State<HomePg> {
                     context,
                     password: ADMIN_PASS,
                   );
+                  debugPrint('ADMIN_PASS=$ADMIN_PASS');
+                  debugPrint('dialog result ok=$ok');
 
                   if (!context.mounted) return;
 
-                  if (ok) AdminGate.login();
+                  if (ok) 
+                  {
+                    debugPrint('calling AdminGate.login()');
+                    AdminGate.login();
+                  }
                 },
               ),
 
