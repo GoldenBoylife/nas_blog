@@ -12,7 +12,7 @@ import 'package:nas_blog1/models/blog_category.dart';
 import 'package:nas_blog1/services/post_service.dart';
 import 'package:nas_blog1/services/category_service.dart';
 import 'package:nas_blog1/ui/pages/editor/editor_center.dart';
-import 'package:nas_blog1/utils/markdown/markdown_insert.dart';
+import 'package:nas_blog1/ui/pages/editor/utils/editor_text_insert.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../../models/post_status.dart';
