@@ -70,18 +70,18 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
     final entered = _ctrl.text;
     final expected = widget.password;
 
-    debugPrint('entered=[$entered]');
-    debugPrint('expected=[$expected]');
-    debugPrint('entered.trim()=[${entered.trim()}]');
-    debugPrint('expected.trim()=[${expected.trim()}]');
-    debugPrint('entered length=${entered.length}');
-    debugPrint('expected length=${expected.length}');
-    debugPrint('entered codes=${entered.codeUnits}');
-    debugPrint('expected codes=${expected.codeUnits}');
+    // debugPrint('entered=[$entered]');
+    // debugPrint('expected=[$expected]');
+    // debugPrint('entered.trim()=[${entered.trim()}]');
+    // debugPrint('expected.trim()=[${expected.trim()}]');
+    // debugPrint('entered length=${entered.length}');
+    // debugPrint('expected length=${expected.length}');
+    // debugPrint('entered codes=${entered.codeUnits}');
+    // debugPrint('expected codes=${expected.codeUnits}');
 
 
     final ok = _ctrl.text.trim() == expected.trim();
-    debugPrint('login ok=$ok');
+    // debugPrint('login ok=$ok');
     Navigator.pop(context, ok);
   }
 }
