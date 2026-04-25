@@ -1,11 +1,11 @@
 {
-    "name": "nas_blog1",
-    "short_name": "nas_blog1",
+    "name": "GoldenBoy 로봇 개발 놀이터",
+    "short_name": "GoldenBoy Lab",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "이 로봇 개발 덕후가 한번 세상을 놀래켜 보게쓰.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -41,6 +41,7 @@ class HomePg extends StatefulWidget {
 }
 
 class _HomePgState extends State<HomePg> {
+  final GlobalKey _latest_section_key = GlobalKey();
 
   /* data */
   List<BlogCategory> _category_tree = [];
@@ -79,9 +80,7 @@ class _HomePgState extends State<HomePg> {
                             },
           );
 
-    
-    final h  = MediaQuery.of(context).size.height;
-    final hero_h = (h*0.22) .clamp(120.0, 220.0); //취향값
+
     return CommonScaffold(
       use_page_scroll: false,
       content_max_width: 1100, //홈은 1100정도 추천
@@ -94,11 +93,22 @@ class _HomePgState extends State<HomePg> {
       children : [
     
           FullBleed(
-            child: PageHero(screen_model: screen_model),
+            child: PageHero(
+              screen_model: screen_model,
+              title: 'Dr.GoldenBoy Lab',
+              sub_title: '이 로봇 개발 덕후가 한번 세상을 놀래켜 보게쓰 ( •̀ᴗ•́ )و ̑̑ \n you can be',
+              words: const ['Programmer', 'Engineer', 'Designer', ],
+              // 나중에 이모티콘으로? (ง •̀_•́)ง, ( •̀ ω •́ )✧ ,  (๑•̀ㅂ•́)و✧ , ( •̀ᴗ•́ )و ̑̑
+              on_scroll_down: _scrollToLatestSection,
             ),
-          const SizedBox(height: 18),
-          _BuildMainContentExpanded(),
-          //PostGrid와 PostCard가 여기서 뜬다. 
+            ),
+          const SizedBox(height: 28),
+          KeyedSubtree(
+            key: _latest_section_key,
+            child: _BuildMainContentExpanded(),
+                  //PostGrid와 PostCard가 여기서 뜬다. 
+
+          ),
           const SizedBox(height: 24)
         
       ]
@@ -380,6 +390,18 @@ Future<void> _fetchCategories() async {
       _cats_error = '$e';
     });
   }
+}
+
+void _scrollToLatestSection() {
+  final context = _latest_section_key.currentContext;
+  if (context == null) return;
+
+  Scrollable.ensureVisible(
+    context,
+    duration: const Duration(milliseconds: 550),
+    curve: Curves.easeOutCubic,
+    alignment: 0.05,
+  );
 }
 
 
