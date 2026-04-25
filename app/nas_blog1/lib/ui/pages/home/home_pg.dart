@@ -286,67 +286,65 @@ class _HomePgState extends State<HomePg> {
   }
 
 
+List<Widget> _topActions() {
+  return [
+    ValueListenableBuilder<bool>(
+      valueListenable: AdminGate.is_admin,
+      builder: (context, is_admin, _) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: is_admin ? 'Logout' : 'Login',
+              icon: Icon(
+                is_admin ? Icons.lock_open : Icons.lock_outline,
+              ),
+              onPressed: () async {
+                if (is_admin) {
+                  AdminGate.logout();
+                  return;
+                }
 
-  List<Widget> _topActions() {
-    return [
-      ValueListenableBuilder<bool>(
-        valueListenable: AdminGate.is_admin,
-        builder: (context, isAdmin, _) {
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+                final ok = await AdminLoginDialog.open(
+                  context,
+                  password: ADMIN_PASS,
+                );
+
+                if (!context.mounted) return;
+                if (ok) AdminGate.login();
+              },
+            ),
+
+            if (is_admin) ...[
+              const SizedBox(width: 6),
               IconButton(
-                tooltip: isAdmin ? 'Logout' : 'Login',
-                icon: Icon(isAdmin ? Icons.lock_open : Icons.lock_outline),
+                tooltip: 'New Post',
+                icon: const Icon(Icons.edit_square),
                 onPressed: () async {
-                  if (isAdmin) {
-                    AdminGate.logout();
-                    return;
-                  }
-
-                  final ok = await AdminLoginDialog.open(
+                  final changed = await Navigator.push<bool>(
                     context,
-                    password: ADMIN_PASS,
+                    MaterialPageRoute(
+                      builder: (_) => const EditorPg(),
+                    ),
                   );
-                  debugPrint('ADMIN_PASS=$ADMIN_PASS');
-                  debugPrint('dialog result ok=$ok');
 
                   if (!context.mounted) return;
 
-                  if (ok) 
-                  {
-                    debugPrint('calling AdminGate.login()');
-                    AdminGate.login();
+                  if (changed == true) {
+                    // HomePg에 글 목록 새로고침 함수가 있으면 여기 호출
+                    // 예: _fetchPosts();
+                    // 예: _refreshPosts();
                   }
                 },
               ),
-
-              if (isAdmin) ...[
-                const SizedBox(width: 6),
-                IconButton(
-                  tooltip: 'New Post',
-                  icon: const Icon(Icons.edit_square),
-                  onPressed: () async {
-                    final changed = await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const EditorPg()),
-                    );
-
-                    if (!context.mounted) return;
-
-                    if (changed == true) {
-                      _refreshPosts();
-                    }
-                  },
-                ),
-              ],
             ],
-          );
-        },
-      ),
-      const SizedBox(width: 4),
-    ];
-  }
+          ],
+        );
+      },
+    ),
+    const SizedBox(width: 4),
+  ];
+}
   Widget _maxWidthCenter(Widget child) {
     const maxW = 1100.0; // 취향: 960~1200 추천
     return Align(
