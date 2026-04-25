@@ -9,11 +9,16 @@ class PostCard extends StatelessWidget {
   final PostMeta post;
   final VoidCallback on_tap;
 
+  final double thumbnail_height;
+
+
+
 
   const PostCard({
     super.key,
     required this.post,
-    required this.on_tap
+    required this.on_tap,
+    this.thumbnail_height = 150,
     });
 
     String? _thumbnailUrl() {
@@ -76,7 +81,7 @@ class PostCard extends StatelessWidget {
           children: [
             /*상단 썸네일 영역(고정높이) */
             SizedBox(
-              height: 150,
+              height: thumbnail_height,
               child: Stack(
                 fit:StackFit.expand,
                 children: [
@@ -119,9 +124,12 @@ class PostCard extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextUtil.get12(context,Colors.white),
-                            )
-                          )
-                        )
+                            ),
+                            
+                          ),
+                          
+                        ),
+    
                 
                       ]
                     )
@@ -139,16 +147,31 @@ class PostCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextUtil.get16(context,Colors.black, font_weight: FontWeight.w800),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
 
                         /*작성자/날짜 줄 (지금 데이터에서 author 없으니 일단 "goldenboy" 고정) */
                         Row(
                           children: [
-                            const CircleAvatar(
-                              radius : 12 ,
-                              child: Icon(Icons.person, size: 14),
+                            Container(
+                              width: 24,
+                              height: 24,
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                                border: Border.all(
+                                  color: const Color(0xFFE5E7EB),
+                                  width: 1,
+                                ),
+                              ),
+                              child: ClipOval(
+                                child: Image.asset(
+                                  'assets/logo.png',
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Text(
                               'GoldenBoy',
                               style: TextUtil.get12(context, Colors.grey.shade700),
@@ -166,7 +189,7 @@ class PostCard extends StatelessWidget {
                             )
                           ]
                         ),
-                        const SizedBox(height:12),
+                        // const SizedBox(height:12),
 
                         /*태그/ 댓글 공유 (임시 UI)*/
                         //나중에 넣읍시다. 나중에! 댓글 기능 넣고서.
@@ -188,5 +211,33 @@ class PostCard extends StatelessWidget {
       )
     );
     
+  }
+
+
+    /*card 안에 logo */
+    Widget _logoBadge() {
+    return Container(
+      width: 46,
+      height: 46,
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.92),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+            color: Colors.black.withOpacity(0.18),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.asset(
+          'assets/logo.png',
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
   }
 }

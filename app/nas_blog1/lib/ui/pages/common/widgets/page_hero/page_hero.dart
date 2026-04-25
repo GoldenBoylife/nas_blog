@@ -16,6 +16,7 @@ class PageHero extends StatelessWidget {
     final String title;
     final String sub_title;
     final List<String> words;
+    final VoidCallback? on_scroll_down;
 
   const PageHero({
     super.key,
@@ -23,13 +24,14 @@ class PageHero extends StatelessWidget {
     this.title = "Dr.GoldenBoy Lab",
     this.sub_title = "you can be",
     this.words = const ['designer', 'engineer', 'programmer'],    
+    this.on_scroll_down,
     });
 
 /*functions*/
     double _height() {
-        if(screen_model.web) return 520;
-        if(screen_model.tablet) return 360;
-        return 260;
+        if(screen_model.web) return 620; //520
+        if(screen_model.tablet) return 420;
+        return 320;
     }
     double _titleSize() {
         if(screen_model.web) return 52;
@@ -134,10 +136,41 @@ class PageHero extends StatelessWidget {
                                                         ).toList(),
                                                 )
 
-                                            )
+                                            ),
+                                            /*아래 화살표*/
+                                            Positioned(
+                                              left: 0,
+                                              right: 0,
+                                              bottom: 28,
+                                              child: Center(
+                                                child: InkWell(
+                                                  borderRadius: BorderRadius.circular(999),
+                                                  onTap: on_scroll_down,
+                                                  child: Container(
+                                                    width: 58,
+                                                    height: 58,
+                                                    decoration: BoxDecoration(
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(
+                                                        color: Colors.white.withOpacity(0.75),
+                                                        width: 1.4,
+                                                      ),
+                                                      color: Colors.black.withOpacity(0.18),
+                                                    ),
+                                                    child: const Icon(
+                                                      Icons.keyboard_arrow_down_rounded,
+                                                      color: Colors.white,
+                                                      size: 38,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+
                                     ]
                                 ) )
-                        )
+                        ),
+                        
                     )
                 ]
             )

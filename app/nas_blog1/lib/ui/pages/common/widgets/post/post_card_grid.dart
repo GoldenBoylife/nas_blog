@@ -92,6 +92,7 @@ class PostCardGrid extends StatelessWidget {
                             //세로 크기를 2배로 지정
                             child: PostCard(
                               post: posts[0],
+                              thumbnail_height: tile_height * 0.85,
                               on_tap: () => on_tap(posts[0]),
                             )
                           )
@@ -131,20 +132,24 @@ class PostCardGrid extends StatelessWidget {
                 );
               }
               /*좁은 화면일때 : 첫 카드만 살짝 큰 카드로 보여주고, 나머지는 그리드  */
-              if(featured && posts.length >= 2) {
-                return Column(
-                  children: [
-                    SizedBox(
-                      height: tile_height * 1.35,
-                      child: PostCard(
-                        post: posts[0],
-                        on_tap : () => on_tap(posts[0]),
-                      )
-                    ),
-                    const SizedBox(height:18),
-                    _buildGrid(posts.skip(1).toList())
-                  ]
-                );
+              // if(featured && posts.length >= 2) {
+              //   return Column(
+              //     children: [
+              //       SizedBox(
+              //         height: tile_height * 1.35,
+              //         child: PostCard(
+              //           post: posts[0],
+              //             thumbnail_height: tile_height * 1.55,
+              //             on_tap : () => on_tap(posts[0]),
+              //         )
+              //       ),
+              //       const SizedBox(height:18),
+              //       _buildGrid(posts.skip(1).toList())
+              //     ]
+              //   );
+              // }
+              if (featured && posts.length >= 2) {
+                return _buildGrid(posts);
               }
               return _buildGrid(posts);
             }
