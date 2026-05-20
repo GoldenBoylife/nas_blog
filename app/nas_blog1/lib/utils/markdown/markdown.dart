@@ -5,7 +5,9 @@ import 'package:nas_blog1/utils/markdown/markdown_style.dart';
 import 'package:nas_blog1/utils/markdown/markdown_text.dart';
 import 'package:nas_blog1/utils/markdown/markdown_youtube.dart';
 import 'package:nas_blog1/utils/markdown/markdown_image_builder.dart';
+import 'package:nas_blog1/utils/markdown/markdown_aside.dart';
 // import 'package:nas_blog1/utils/markdown/markdown_spacer.dart';
+import 'package:nas_blog1/utils/markdown/markdown_header.dart';
 
 class BlogMarkdownScroll extends StatelessWidget {
   final String data;
@@ -40,27 +42,36 @@ class BlogMarkdownScroll extends StatelessWidget {
           physics: physics,
           shrinkWrap: shrinkWrap,
           children: [
-            for (final part in parts)
-              if (part.isSpacer)
-                SizedBox(height: part.spacerHeight)
-              else
-                fm.MarkdownBody(
-                  data: preprocessYoutubeLinks(part.markdown!),
-                  selectable: selectable,
-                  styleSheet: style,
-                  softLineBreak: true,
-                  imageBuilder: (uri, alt, title) => buildMarkdownImage(
-                    context: context,
-                    uri: uri,
-                    alt: alt,
-                    title: title,
-                    max_width: constraints.maxWidth,
-                  ),
-                  onTapLink: (text, href, title) async {
-                    if (href == null) return;
-                    await handleMarkdownLinkTap(context, href);
-                  },
+          for (final part in parts)
+            if (part.isSpacer)
+              SizedBox(height: part.spacerHeight)
+            else if (part.isHeading)
+              BlogHeading(data: part.heading!)
+            else if (part.isAside)
+              BlogAside(
+                data: part.aside!,
+                styleSheet: style,
+                selectable: selectable,
+                maxWidth: constraints.maxWidth,
+              )
+            else
+              fm.MarkdownBody(
+                data: preprocessYoutubeLinks(part.markdown!),
+                selectable: selectable,
+                styleSheet: style,
+                softLineBreak: true,
+                imageBuilder: (uri, alt, title) => buildMarkdownImage(
+                  context: context,
+                  uri: uri,
+                  alt: alt,
+                  title: title,
+                  max_width: constraints.maxWidth,
                 ),
+                onTapLink: (text, href, title) async {
+                  if (href == null) return;
+                  await handleMarkdownLinkTap(context, href);
+                },
+              ),
           ],
         );
       },
@@ -90,10 +101,18 @@ class BlogMarkdownBody extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final part in parts)
+            children: [
+              for (final part in parts)
               if (part.isSpacer)
                 SizedBox(height: part.spacerHeight)
+              else if (part.isHeading)
+                BlogHeading(data: part.heading!)
+              else if (part.isAside)
+                BlogAside(
+                  data: part.aside!,
+                  styleSheet: style,
+                  maxWidth: constraints.maxWidth,
+                )
               else
                 fm.MarkdownBody(
                   data: preprocessYoutubeLinks(part.markdown!),
@@ -111,7 +130,7 @@ class BlogMarkdownBody extends StatelessWidget {
                     await handleMarkdownLinkTap(context, href);
                   },
                 ),
-          ],
+            ],
         );
       },
     );

@@ -1,13 +1,51 @@
 // import 'package:nas_blog1/utils/markdown/markdown_spacer.dart';
-
+import 'package:nas_blog1/utils/markdown/markdown_aside.dart';
+import 'package:nas_blog1/utils/markdown/markdown_header.dart';
 class MarkdownRenderPart {
   final String? markdown;
   final double spacerHeight;
+  final BlogAsideData? aside;
+  final BlogHeadingData? heading;
 
-  const MarkdownRenderPart.markdown(this.markdown) : spacerHeight = 0;
-  const MarkdownRenderPart.spacer(this.spacerHeight) : markdown = null;
+  const MarkdownRenderPart.markdown(this.markdown)
+      : spacerHeight = 0,
+        aside = null,
+        heading = null;
 
-  bool get isSpacer => markdown == null;
+  const MarkdownRenderPart.spacer(this.spacerHeight)
+      : markdown = null,
+        aside = null,
+        heading = null;
+
+  const MarkdownRenderPart.aside(this.aside)
+      : markdown = null,
+        spacerHeight = 0,
+        heading = null;
+
+  const MarkdownRenderPart.heading(this.heading)
+      : markdown = null,
+        spacerHeight = 0,
+        aside = null;
+
+  bool get isSpacer => markdown == null && aside == null && heading == null;
+  bool get isAside => aside != null;
+  bool get isHeading => heading != null;
+}
+
+BlogHeadingData? _parseHeading(String trimmed) {
+  final match = RegExp(r'^(#{1,4})\s+(.+)$').firstMatch(trimmed);
+
+  if (match == null) return null;
+
+  final level = match.group(1)!.length;
+  final text = match.group(2)!.trim();
+
+  if (text.isEmpty) return null;
+
+  return BlogHeadingData(
+    level: level,
+    text: text,
+  );
 }
 
 String preprocessMarkdownText(String input) 
@@ -80,7 +118,10 @@ List<MarkdownRenderPart> splitMarkdownByBlankLines(
     blankCount = 0;
   }
 
-  for (final line in lines) {
+  int i = 0;
+
+  while (i < lines.length) {
+    final line = lines[i];
     final trimmed = line.trim();
 
     if (inCodeFence) {
@@ -90,6 +131,7 @@ List<MarkdownRenderPart> splitMarkdownByBlankLines(
         inCodeFence = false;
       }
 
+      i++;
       continue;
     }
 
@@ -98,16 +140,65 @@ List<MarkdownRenderPart> splitMarkdownByBlankLines(
 
       inCodeFence = true;
       buffer.add(line);
+      i++;
+      continue;
+    }
+
+    final heading = _parseHeading(trimmed);
+
+    if (heading != null) {
+      flushBlankLines();
+      flushMarkdownBuffer();
+
+      parts.add(
+        MarkdownRenderPart.heading(heading),
+      );
+
+      i++;
+      continue;
+    }
+
+    if (_isAsideOpen(trimmed)) {
+      flushBlankLines();
+      flushMarkdownBuffer();
+
+      final asideLines = <String>[];
+      i++;
+
+      while (i < lines.length) {
+        final currentLine = lines[i];
+        final currentTrimmed = currentLine.trim();
+
+        if (_isAsideClose(currentTrimmed)) {
+          break;
+        }
+
+        asideLines.add(currentLine);
+        i++;
+      }
+
+      parts.add(
+        MarkdownRenderPart.aside(
+          _buildAsideData(asideLines),
+        ),
+      );
+
+      if (i < lines.length) {
+        i++;
+      }
+
       continue;
     }
 
     if (trimmed.isEmpty) {
       blankCount++;
+      i++;
       continue;
     }
 
     flushBlankLines();
     buffer.add(line);
+    i++;
   }
 
   flushBlankLines();
@@ -116,6 +207,257 @@ List<MarkdownRenderPart> splitMarkdownByBlankLines(
   return parts;
 }
 
+
+/*aside */
+bool _isAsideOpen(String trimmed) {
+  return trimmed.toLowerCase() == '<aside>';
+}
+
+bool _isAsideClose(String trimmed) {
+  return trimmed.toLowerCase() == '</aside>';
+}
+
+List<String> _trimEmptyEdges(List<String> lines) {
+  final result = [...lines];
+
+  while (result.isNotEmpty && result.first.trim().isEmpty) {
+    result.removeAt(0);
+  }
+
+  while (result.isNotEmpty && result.last.trim().isEmpty) {
+    result.removeLast();
+  }
+
+  return result;
+}
+bool _looksLikeIcon(String value) {
+  final v = value.trim();
+
+  if (v.isEmpty) return false;
+  if (v.length > 8) return false;
+
+  return !RegExp(r'[A-Za-z0-9가-힣]').hasMatch(v);
+}
+
+bool _isKeywordTitle(String value) {
+  final key = value.trim().toLowerCase().replaceAll(' ', '');
+
+  return {
+    'tip',
+    'tips',
+    'hint',
+    'warning',
+    'warn',
+    'danger',
+    'problem',
+    'error',
+    'info',
+    'note',
+    'memo',
+    'done',
+    'success',
+    'result',
+    '주의',
+    '경고',
+    '문제',
+    '에러',
+    '참고',
+    '설명',
+    '메모',
+    '완료',
+    '결과',
+    '결론',
+  }.contains(key);
+}
+
+BlogAsideKind _kindFromTitle(String value) {
+  final key = value.trim().toLowerCase().replaceAll(' ', '');
+
+  switch (key) {
+    case 'warning':
+    case 'warn':
+    case 'danger':
+    case '주의':
+    case '경고':
+      return BlogAsideKind.warning;
+
+    case 'problem':
+    case 'error':
+    case '문제':
+    case '에러':
+      return BlogAsideKind.problem;
+
+    case 'info':
+    case '참고':
+    case '설명':
+      return BlogAsideKind.info;
+
+    case 'note':
+    case 'memo':
+    case '메모':
+      return BlogAsideKind.note;
+
+    case 'done':
+    case 'success':
+    case '완료':
+      return BlogAsideKind.done;
+
+    case 'result':
+    case '결과':
+    case '결론':
+      return BlogAsideKind.result;
+
+    case 'tip':
+    case 'tips':
+    case 'hint':
+    default:
+      return BlogAsideKind.tip;
+  }
+}
+
+String _titleFromKeyword(String value) {
+  final key = value.trim().toLowerCase().replaceAll(' ', '');
+
+  switch (key) {
+    case 'warning':
+    case 'warn':
+    case 'danger':
+    case '주의':
+    case '경고':
+      return 'Warning';
+
+    case 'problem':
+    case 'error':
+    case '문제':
+    case '에러':
+      return 'Problem';
+
+    case 'info':
+    case '참고':
+    case '설명':
+      return 'Info';
+
+    case 'note':
+    case 'memo':
+    case '메모':
+      return 'Note';
+
+    case 'done':
+    case 'success':
+    case '완료':
+      return 'Done';
+
+    case 'result':
+    case '결과':
+    case '결론':
+      return 'Result';
+
+    case 'tip':
+    case 'tips':
+    case 'hint':
+    default:
+      return 'Tip';
+  }
+}
+
+String _iconFromKind(BlogAsideKind kind) {
+  switch (kind) {
+    case BlogAsideKind.warning:
+      return '⚠️';
+
+    case BlogAsideKind.problem:
+      return '🚨';
+
+    case BlogAsideKind.info:
+      return 'ℹ️';
+
+    case BlogAsideKind.note:
+      return '📝';
+
+    case BlogAsideKind.done:
+    case BlogAsideKind.result:
+      return '✅';
+
+    case BlogAsideKind.tip:
+    case BlogAsideKind.simple:
+    default:
+      return '💡';
+  }
+}
+
+BlogAsideData _buildAsideData(List<String> rawLines) {
+  var lines = _trimEmptyEdges(rawLines);
+
+  var icon = '💡';
+
+  // Notion에서 복사한 경우 첫 줄에 💡만 있을 수 있음
+  if (lines.isNotEmpty && _looksLikeIcon(lines.first.trim())) {
+    icon = lines.first.trim();
+    lines = _trimEmptyEdges(lines.sublist(1));
+  }
+
+  if (lines.isEmpty) {
+    return const BlogAsideData(
+      kind: BlogAsideKind.simple,
+      title: '',
+      icon: '💡',
+      body: '',
+      hasTitle: false,
+    );
+  }
+
+  final blankIndex = lines.indexWhere((line) => line.trim().isEmpty);
+
+  // 빈 줄이 없으면 한 줄짜리 aside
+  if (blankIndex < 0) {
+    return BlogAsideData(
+      kind: BlogAsideKind.simple,
+      title: '',
+      icon: icon,
+      body: lines.join('\n').trim(),
+      hasTitle: false,
+    );
+  }
+
+  final titleRaw = lines.sublist(0, blankIndex).join(' ').trim();
+
+  var bodyLines = lines.sublist(blankIndex + 1);
+  bodyLines = _trimEmptyEdges(bodyLines);
+
+  // 제목만 있고 본문이 없으면 simple 처리
+  if (titleRaw.isEmpty || bodyLines.isEmpty) {
+    return BlogAsideData(
+      kind: BlogAsideKind.simple,
+      title: '',
+      icon: icon,
+      body: lines.join('\n').trim(),
+      hasTitle: false,
+    );
+  }
+
+  // tip / warning / info 같은 키워드 제목
+  if (_isKeywordTitle(titleRaw)) {
+    final kind = _kindFromTitle(titleRaw);
+
+    return BlogAsideData(
+      kind: kind,
+      title: _titleFromKeyword(titleRaw),
+      icon: _iconFromKind(kind),
+      body: bodyLines.join('\n').trim(),
+      hasTitle: true,
+    );
+  }
+
+  // 일반 제목
+  return BlogAsideData(
+    kind: BlogAsideKind.tip,
+    title: titleRaw,
+    icon: icon,
+    body: bodyLines.join('\n').trim(),
+    hasTitle: true,
+  );
+}
+/*    aside */
 
 // /*줄바꿈 정리 */
 // String normalizeMarkdownLineBreaks(String input) 
