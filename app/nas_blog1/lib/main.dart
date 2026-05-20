@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
         //data : url에 없는 데이터 넣을 때, 안써도 됨. 
         return const BeamPage(
           key: ValueKey("Home"), //페이지 고유식별자
-          title: "Home",  //탭제목이나, 메타 정보
+          title: "GoldenBoy 로봇 개발 놀이터",  //탭제목이나, 메타 정보
           child: HomePg(), //실제 화면
         );
         //이 RoutePage로 들어왔을때 어떤 화면 보여줄지를 BeamPage객체로 반환

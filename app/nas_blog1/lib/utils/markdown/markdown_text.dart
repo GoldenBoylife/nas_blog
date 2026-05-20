@@ -117,82 +117,82 @@ List<MarkdownRenderPart> splitMarkdownByBlankLines(
 }
 
 
-/*줄바꿈 정리 */
-String normalizeMarkdownLineBreaks(String input) 
-{
-  final lines = input.split('\n'); 
-  //입력 문자열을 줄단위로 바꿈 
-  //예를 들어서, 
-  // 변경전) 안녕하세요\n반갑습니다. 
-  // 변경후) 안녕하세요. 
-  //        반갑습니다.
-  // ['안녕하세요','반갑습니다'] 로 나뉨
-  /* 바뀐 것2
-   markdown렌더러는 \n가 여러개 있어도 \n 한번만 한다. 그래서 두번재 빈줄부터는 \u00A0(non-breaking space)를 넣ㅇ어서 빈공간 렌더링한다.
+// /*줄바꿈 정리 */
+// String normalizeMarkdownLineBreaks(String input) 
+// {
+//   final lines = input.split('\n'); 
+//   //입력 문자열을 줄단위로 바꿈 
+//   //예를 들어서, 
+//   // 변경전) 안녕하세요\n반갑습니다. 
+//   // 변경후) 안녕하세요. 
+//   //        반갑습니다.
+//   // ['안녕하세요','반갑습니다'] 로 나뉨
+//   /* 바뀐 것2
+//    markdown렌더러는 \n가 여러개 있어도 \n 한번만 한다. 그래서 두번재 빈줄부터는 \u00A0(non-breaking space)를 넣ㅇ어서 빈공간 렌더링한다.
 
-   */
+//    */
 
-  final out = <String>[];
-  //결과 넣을 빈줄들 
+//   final out = <String>[];
+//   //결과 넣을 빈줄들 
 
-  bool in_code_fence = false; //현재 코드 블록이 안에 있는지 표시
-  int blank_count =0;
+//   bool in_code_fence = false; //현재 코드 블록이 안에 있는지 표시
+//   int blank_count =0;
 
-  for(final line in lines) 
-  {
-    final trimmed = line.trim();
+//   for(final line in lines) 
+//   {
+//     final trimmed = line.trim();
 
-    /*코드 블록 시작/끝은 그대로둔다. */
-    if(trimmed.startsWith('```'))
-    {
-      in_code_fence = !in_code_fence;
-      out.add(line);
-      blank_count = 0;
-      continue;
-    }
+//     /*코드 블록 시작/끝은 그대로둔다. */
+//     if(trimmed.startsWith('```'))
+//     {
+//       in_code_fence = !in_code_fence;
+//       out.add(line);
+//       blank_count = 0;
+//       continue;
+//     }
 
-    if(in_code_fence) 
-    {
-      out.add(line);
-      continue;
-    }
-    /*
-      빈 줄처리.
-      첫 번째 빈 줄은 Markdown의 기본 문단 구분으로 둔다.
-      두 번째 빈 줄부터는 실제 빈 문단처럼 보존한다. 
+//     if(in_code_fence) 
+//     {
+//       out.add(line);
+//       continue;
+//     }
+//     /*
+//       빈 줄처리.
+//       첫 번째 빈 줄은 Markdown의 기본 문단 구분으로 둔다.
+//       두 번째 빈 줄부터는 실제 빈 문단처럼 보존한다. 
       
-     */
+//      */
 
-    if(trimmed.isEmpty) {
-      blank_count++;
+//     if(trimmed.isEmpty) {
+//       blank_count++;
 
-      if(blank_count ==1) {
+//       if(blank_count ==1) {
         
-        out.add('');
-        //첫 번째 빈줄은 markdown 기본 문단 구분으로 둔다.
+//         out.add('');
+//         //첫 번째 빈줄은 markdown 기본 문단 구분으로 둔다.
 
-      } else {
-        out.add('<br>');
-        // 두번재 빈 줄부터는 실제 spacer block으로 바꾼다.
-      }
-      continue;
-    }
-    /**
-     일반 내용 줄이 나오면 blank_count를 초기화하고그대로 추가한다. 
-     여기서 일반 줄바꿈을 강제로 \n\n로 바꾸어도 markdown랜더러는 그냥 \n로 인식하니 안된다.
-     */
-    blank_count = 0;
-    out.add(line);
-  }
-  return out.join('\n');
-  //결과 리스트를 다시 하나의 문자열로 합치고, 줄 사이에는 \n 넣는다.
-  //out이 '안녕하세요','반갑습니다.','','# 제목','내용입니다.' 라면
+//       } else {
+//         out.add('<br>');
+//         // 두번재 빈 줄부터는 실제 spacer block으로 바꾼다.
+//       }
+//       continue;
+//     }
+//     /**
+//      일반 내용 줄이 나오면 blank_count를 초기화하고그대로 추가한다. 
+//      여기서 일반 줄바꿈을 강제로 \n\n로 바꾸어도 markdown랜더러는 그냥 \n로 인식하니 안된다.
+//      */
+//     blank_count = 0;
+//     out.add(line);
+//   }
+//   return out.join('\n');
+//   //결과 리스트를 다시 하나의 문자열로 합치고, 줄 사이에는 \n 넣는다.
+//   //out이 '안녕하세요','반갑습니다.','','# 제목','내용입니다.' 라면
 
-  //out.join('\n')통해서
-  // 안녕하세요.
-  // 반갑습니다.
-  // 
-  // # 제목
-  // 내용입니다.
+//   //out.join('\n')통해서
+//   // 안녕하세요.
+//   // 반갑습니다.
+//   // 
+//   // # 제목
+//   // 내용입니다.
 
-}
+// }
