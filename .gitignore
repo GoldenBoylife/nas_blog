@@ -9,6 +9,7 @@ app/.vscode/
 
 # private config
 app/nas_blog1/lib/config/config.dart
+server/server.js
 
 # Optional: if you don't want platform folders tracked (보통은 추적 권장)
 # app/android/
