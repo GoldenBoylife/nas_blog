@@ -7,6 +7,9 @@ app/.metadata
 app/.idea/
 app/.vscode/
 
+# private config
+app/nas_blog1/lib/config/config.dart
+
 # Optional: if you don't want platform folders tracked (보통은 추적 권장)
 # app/android/
 # app/ios/
