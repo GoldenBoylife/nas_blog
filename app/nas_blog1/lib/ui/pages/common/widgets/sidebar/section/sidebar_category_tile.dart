@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nas_blog1/config/category_icon_registry..dart';
+import 'package:nas_blog1/config/category_icon_registry.dart';
 import 'package:nas_blog1/models/blog_category.dart';
 
 /*category에서 한줄짜리 타일 */
@@ -15,7 +15,7 @@ class SidebarCategoryTile extends StatelessWidget {
 
   final VoidCallback on_tap_row; //행 클릭 콜백 -> categoryPg로 이동
   final VoidCallback? on_tap_chevron; //sub_category위해서 화살표 클릭 콜백
-
+  final int post_count;
 
   const SidebarCategoryTile({
     super.key,
@@ -27,6 +27,7 @@ class SidebarCategoryTile extends StatelessWidget {
     required this.expanded,
     required this.on_tap_row,
     required this.on_tap_chevron,
+    this.post_count = 0,
     });
 
   @override
@@ -51,14 +52,20 @@ class SidebarCategoryTile extends StatelessWidget {
 
             Expanded(
               child: Text(
-                title, 
+                title,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                )
-              )
+                ),
+              ),
             ),
-            if(has_children) 
+
+            if (post_count > 0) ...[
+              const SizedBox(width: 8),
+              _PostCountBadge(count: post_count),
+            ],
+
+            if (has_children)
               GestureDetector(
                 behavior : HitTestBehavior.opaque,
                 onTap: on_tap_chevron,
@@ -78,6 +85,35 @@ class SidebarCategoryTile extends StatelessWidget {
         )
       )
 
+    );
+  }
+}
+class _PostCountBadge extends StatelessWidget {
+  final int count;
+
+  const _PostCountBadge({
+    required this.count,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.055),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$count',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 11,
+          height: 1.0,
+          fontWeight: FontWeight.w800,
+          color: Colors.black.withOpacity(0.58),
+        ),
+      ),
     );
   }
 }
@@ -121,8 +157,21 @@ class SidebarIconPicker{
     final key = '${_norm(c.slug)}_${_norm(c.name)}';
 
     if(key.contains('portfolio')) return Icons.work_outline;
-    if(key.contains('slam')) return Icons.map_outlined;
-    if(key.contains('paper') || key.contains('note')) return Icons.article_outlined;
+    if (key.contains('mapping_algorithms') ||
+        key.contains('mappingalgorithm') ||
+        key.contains('algorithm')) {
+      return Icons.auto_graph_rounded;
+    }
+
+    if (key.contains('mapping_sensors') ||
+        key.contains('mappingsensor') ||
+        key.contains('sensor')) {
+      return Icons.sensors_rounded;
+    }
+
+    if (key.contains('slam')) return Icons.map_outlined;
+    if (key.contains('paper') || key.contains('note')) return Icons.article_outlined;
+
     if(key.contains('experiment') || key.contains('dataset') || key.contains('metric')) {
       return Icons.science_outlined;
     }

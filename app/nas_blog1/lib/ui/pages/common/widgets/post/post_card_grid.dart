@@ -33,6 +33,12 @@ class PostCardGrid extends StatelessWidget {
   final EdgeInsets padding;
   //바깥 패딩
 
+  final int? max_items;
+  final String? more_button_text;
+  final VoidCallback? on_more_tap;
+  final bool show_more_button;
+
+
 
   const PostCardGrid({
     super.key,
@@ -45,6 +51,11 @@ class PostCardGrid extends StatelessWidget {
     this.tile_height = 270,
     this.spacing = 16,
     this.padding = const EdgeInsets.only(top:12, bottom:40),
+  
+    this.max_items,
+    this.more_button_text,
+    this.on_more_tap,
+    this.show_more_button = false,
     });
 
 
@@ -52,29 +63,24 @@ class PostCardGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     if(posts.isEmpty) return const SizedBox.shrink(); 
     //posts 리스트가 비어 있으면 아무것도 그리지 말고 그 자리에서 build 끝내기.
-    return  Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title, 
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
 
-        ),
-        if(sub_title != null && sub_title!.trim().isNotEmpty) ... [
-          const SizedBox(height: 6),
-          Text(
-            sub_title!,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[700])
-          )
-        ],
-        const SizedBox(height: 14),
+    final visible_posts = max_items == null
+      ? posts
+      : posts.take(max_items!).toList();
 
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: padding.left),
-          child: LayoutBuilder(
+    return  Padding(
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(context),
+ 
+          const SizedBox(height: 14),
+      
+          LayoutBuilder(
             builder: (context,c) {
               final w = c.maxWidth;
-              final can_fancy_featured = featured && posts.length >= 3 && w >=920;
+              final can_fancy_featured = featured && visible_posts.length >= 3 && w >=920;
               // 레이아웃 최소 폭(취향값)
               if(can_fancy_featured) {
                 //왼쪽 큰 카드(2배 높이) + 오른쪽 작은 카드 2개
@@ -91,9 +97,9 @@ class PostCardGrid extends StatelessWidget {
                             height: tile_height *2 + spacing,
                             //세로 크기를 2배로 지정
                             child: PostCard(
-                              post: posts[0],
-                              thumbnail_height: tile_height * 0.85,
-                              on_tap: () => on_tap(posts[0]),
+                              post: visible_posts[0],
+                              thumbnail_height: tile_height * 0.95,
+                              on_tap: () => on_tap(visible_posts[0]),
                             )
                           )
                         ),
@@ -106,16 +112,16 @@ class PostCardGrid extends StatelessWidget {
                                 height: tile_height,
                                 child: PostCard(
                                   //실제 콘텐츠 
-                                  post: posts[1],
-                                  on_tap: () => on_tap(posts[1]),
+                                  post: visible_posts[1],
+                                  on_tap: () => on_tap(visible_posts[1]),
                                   //클릭하면 이리로 이동
                                 )
                               ),
                               SizedBox(height: spacing),
                               SizedBox(height: tile_height,
                               child: PostCard(
-                                post: posts[2], 
-                                on_tap:() => on_tap(posts[2])
+                                post: visible_posts[2], 
+                                on_tap:() => on_tap(visible_posts[2])
                                 )
                               )
                             ]
@@ -124,10 +130,11 @@ class PostCardGrid extends StatelessWidget {
                       ]
                     ),
                     const SizedBox(height:18),
-                    _buildGrid(posts.skip(3).toList()),
+                    _buildGrid(visible_posts.skip(3).toList()),
                     //posts : 서버로부터 받아온 전체 게시글 목록
                     //skip :앞의 3개 건너뜀. 그 뒤의 것부터 나열
                     //toList() : skip()은 <postMeta>반환해서, 진짜 List로 반환
+                    _buildMoreButton(context),
                   ]
                 );
               }
@@ -148,23 +155,63 @@ class PostCardGrid extends StatelessWidget {
               //     ]
               //   );
               // }
-              if (featured && posts.length >= 2) {
-                return _buildGrid(posts);
-              }
-              return _buildGrid(posts);
+
+              return Column(
+                children: [
+                  _buildGrid(visible_posts),
+                  _buildMoreButton(context),
+                ]
+              );
             }
-          ))
+          )  
+          
         
-        
-      ]
+        ]
+      )
     );
   }
 
   /*
   funcs
-  - _buildGrid 
+  - _buildHeader : 섹션의 위쪽 제목과 부제목 만들기
+  - _buildGrid :PostGrid를 위젯으로 그림 
+  - _buildMoreButton : 더보기 버튼
    */
+  
+  /*섹션 위쪽 제목과 부제목을 만드는 함수 */
+  // 최신 게시글
+  //  따근따끈 머시기~
+  Widget _buildHeader(BuildContext context) 
+  {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children : [
+        Expanded(
+          child: Column(
+            crossAxisAlignment : CrossAxisAlignment.start,
+            children : [
+              Text(
+                  title, 
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+            
+                ),
+                if(sub_title != null && sub_title!.trim().isNotEmpty) ... [
+                  const SizedBox(height: 6),
+                  Text(
+                    sub_title!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[700])
+                  )
+                ],
 
+              ]
+          )
+        )
+      ]
+ 
+    );
+  }
+
+  /*PostGrid를 위젯으로 그림 */
   Widget _buildGrid(List<PostMeta> list) {
     if(list.isEmpty) return const SizedBox.shrink();
 
@@ -181,8 +228,33 @@ class PostCardGrid extends StatelessWidget {
     );
   }
 
+  /*더보기 버튼 */
+  Widget _buildMoreButton(BuildContext context) 
+  {
+    if(!show_more_button || on_more_tap == null) {
+      return const SizedBox.shrink();
+    }
 
-
+    return Padding(
+      padding:const EdgeInsets.only(top :18),
+      child: Center(
+        child: OutlinedButton.icon(
+          onPressed: on_more_tap,
+          icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+          label: Text(more_button_text ?? '더 보기'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.black87,
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+            side : BorderSide(color: Colors.black.withOpacity(0.12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(999),
+            )
+          )
+        )
+      )
+      
+      );
+  }
 
 
 

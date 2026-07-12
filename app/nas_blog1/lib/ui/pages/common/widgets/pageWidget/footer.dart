@@ -1,5 +1,3 @@
-
-/*임시용 */
 import 'package:flutter/material.dart';
 import 'package:nas_blog1/ui/pages/common/theme/my_color.dart';
 import 'package:nas_blog1/ui/pages/common/theme/text_util.dart';
@@ -7,34 +5,74 @@ import 'package:nas_blog1/ui/pages/common/theme/text_util.dart';
 class Footer extends StatelessWidget {
   const Footer({super.key});
 
+  static const String version = 'v0.1.0';
+  static const String email = 'hwidong0102@naver.com';
+  // static const String github = 'GoldenBoylife';
+
   @override
   Widget build(BuildContext context) {
-    var width = MediaQuery.of(context).size.width; // 현재 창 width 크기
     return Container(
-      color: MyColor.white, // 배경색 설정
-      width: double.infinity, // 화면 전체 너비로 설정
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 40), // 상하 좌우 padding 추가
+      color: MyColor.white,
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(40, 42, 40, 36),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, // 왼쪽 정렬
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 회사 정보, 주소 및 연락처 부분
-          Text("Dev_v0.1.0", style: TextUtil.get24(context, Colors.black)),
-          const SizedBox(height: 8),
-          Text("Contact me", style: TextUtil.get24(context, Colors.black)),
-          const SizedBox(height: 8),
+          Divider(color: Colors.black.withOpacity(0.08)),
+          const SizedBox(height: 28),
+
           Text(
-            "South Korea", 
-            style: TextUtil.get16(context, MyColor.gray80)
+            'GoldenBoy Lab',
+            style: TextUtil.get24(context, Colors.black).copyWith(
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.4,
+            ),
           ),
-          const SizedBox(height: 8),
+
+          const SizedBox(height: 10),
+
           Text(
-            "Email: ---,", 
-            style: TextUtil.get16(context, MyColor.gray80)
+            'SLAM · Robotics · Embedded Systems · PetBot',
+            style: TextUtil.get16(context, MyColor.gray80),
           ),
-          const SizedBox(height: 20),
-          Divider(color: MyColor.gray80), // 구분선
+
+          const SizedBox(height: 22),
+
+          Wrap(
+            spacing: 18,
+            runSpacing: 8,
+            children: [
+              _FooterText(text: 'Personal Dev Lab · $version'),
+              const _FooterText(text: 'South Korea'),
+              _FooterText(text: 'Email: $email'),
+              // _FooterText(text: 'text: $text'),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          Text(
+            '© 2026 GoldenBoy Lab. All rights reserved.',
+            style: TextUtil.get14(context, MyColor.gray80),
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _FooterText extends StatelessWidget {
+  final String text;
+
+  const _FooterText({
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: TextUtil.get14(context, MyColor.gray80),
     );
   }
 }

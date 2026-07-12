@@ -19,6 +19,8 @@ class Sidebar extends StatelessWidget {
   //명시적 콜백 
   final VoidCallback?  on_refresh;
 
+  final Map<String, int> post_count_by_slug;
+
   const Sidebar({
     super.key,
     required this.categories,
@@ -27,6 +29,7 @@ class Sidebar extends StatelessWidget {
     this.show_all_tile = false,
     this.on_home,
     this.on_refresh,
+    this.post_count_by_slug = const {},
     });
 
   @override
@@ -52,7 +55,9 @@ class Sidebar extends StatelessWidget {
                     selected_slug: selected_slug,
                     on_navigate : on_navigate,
                     //카테고리 클릭 시 이동 콜백 전달
-                    show_all_tile : show_all_tile,
+                    show_all_tile : show_all_tile,  
+                    post_count_by_slug: post_count_by_slug,
+
                   ),
                   const SizedBox(height:10),
                   // const SidebarFooter(),

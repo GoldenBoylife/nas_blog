@@ -12,7 +12,9 @@ class SidebarCategory extends StatefulWidget {
   final String? selected_slug;
   final void Function(String? slug) on_navigate;
   //인자가 있는 콜백
-  final bool show_all_tile;
+  final bool show_all_tile;      
+  final Map<String, int> post_count_by_slug;
+
 
   const SidebarCategory({
     super.key,
@@ -20,6 +22,7 @@ class SidebarCategory extends StatefulWidget {
     required this.selected_slug,
     required this.on_navigate,
     required this.show_all_tile,
+    this.post_count_by_slug = const {},
     
     });
 
@@ -83,6 +86,8 @@ class _SidebarCategoryState extends State<SidebarCategory> {
     final selected = widget.selected_slug == cat.slug;
     //현재 선택된 카테고리 slug와 이 노드의 slug가 같으면 선택 상태,
 
+    final count = widget.post_count_by_slug[cat.slug] ?? 0;
+
     /*UX 정책: */
     //부모 - row 클릭 => toggle
     //leaf - row 클릭 => navigate
@@ -109,6 +114,8 @@ class _SidebarCategoryState extends State<SidebarCategory> {
           selected: selected, 
           has_children: has_children, 
           expanded: expanded, 
+          post_count: count,
+
           on_tap_row: onRowTap,
           //행 전체를 클릭하면 호출됨. 그리고 라우팅/필터 변경 등 이동 담당.
           /*sub_category는지? 있으면 expanded 상태인지? */
