@@ -29,6 +29,7 @@ import 'package:nas_blog1/ui/pages/common/widgets/post/post_card.dart';
 
 import 'package:nas_blog1/ui/pages/common/state/admin_gate.dart';
 import 'package:nas_blog1/ui/pages/common/dialogs/admin_login_dialog.dart';
+import 'package:nas_blog1/ui/pages/home/widgets/home_section.dart';
 
 
 
@@ -42,6 +43,7 @@ class HomePg extends StatefulWidget {
 
 class _HomePgState extends State<HomePg> {
   final GlobalKey _latest_section_key = GlobalKey();
+
 
   /* data */
   List<BlogCategory> _category_tree = [];
@@ -103,12 +105,14 @@ class _HomePgState extends State<HomePg> {
             ),
             ),
           const SizedBox(height: 28),
-          KeyedSubtree(
-            key: _latest_section_key,
-            child: _BuildMainContentExpanded(),
-                  //PostGrid와 PostCard가 여기서 뜬다. 
+          // KeyedSubtree(
+          //   key: _latest_section_key,
+          //   child: _BuildMainContentExpanded(),
+          //         //PostGrid와 PostCard가 여기서 뜬다. 
 
-          ),
+          // ),
+          _BuildMainContentExpanded(),
+          //최신글 key는 이제 최신 글 섹션에서만 걸을 예정
           const SizedBox(height: 24)
         
       ]
@@ -245,35 +249,45 @@ class _HomePgState extends State<HomePg> {
         //홈은 "All"이면 전체, 아니면 필터된 목록
         final filtered = (_selected_slug ==null)
               ? posts 
-              : posts.where((p) => p.category == _selected_slug).toList();
-        return  
-        // PostGrid(
-        //   posts: filtered,
-        //   on_tap: (p) {
-        //     Navigator.push(
-        //       context,
-        //       MaterialPageRoute(builder: (_) => PostPg(post_id: p.id)),
-        //     );
-        //   }
-        // );
-        PostCardGrid(
-          title: '최신 글 ',
-          sub_title: "따끈 따끈한 포스트 구경해보세요!",
-          posts: filtered,
-          featured: true,
-          on_tap:(p) {
-            return Beamer.of(context).beamToNamed('/post/${p.id}');
-          },
-            );
-          }
+              : posts.where((p) => p.category == _selected_slug).toList();  
+        return KeyedSubtree(
+          key: _latest_section_key,
+          child:HomeSection(
+            posts: filtered,
+            on_post_tap: (post) {
+              Beamer.of(context).beamToNamed('/post/${post.id}');
+            },
+            on_main_project_tap: () {
+              Beamer.of(context).beamToNamed('/category/mapping-algorithms');
+            },
+            on_sub_project_tap: () {
+              Beamer.of(context).beamToNamed('/category/gb-02-pet-robot');
+            },
 
-        );
-        // SizedBox(height:200);
-        
+          ),
+      );
+    },
+  );
+}
+String? _findCategorySlug(List<String> keywords) {
+  final lowered_keywords = keywords
+      .map((e) => e.trim().toLowerCase())
+      .where((e) => e.isNotEmpty)
+      .toList();
+
+  for (final category in _categories) {
+    final slug = category.slug.toLowerCase();
+    final name = category.name.toLowerCase();
+
+    for (final keyword in lowered_keywords) {
+      if (slug.contains(keyword) || name.contains(keyword)) {
+        return category.slug;
       }
-  
+    }
+  }
 
-
+  return null;
+}
   ScreenModel _calcScreenModel(BuildContext context) 
   {
     final w = MediaQuery.of(context).size.width;

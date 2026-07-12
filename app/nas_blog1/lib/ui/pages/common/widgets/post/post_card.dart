@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:nas_blog1/config/config.dart';
 import 'package:nas_blog1/models/post_meta.dart';
 import 'package:nas_blog1/ui/pages/common/theme/text_util.dart';
+import 'package:nas_blog1/ui/pages/home/widgets/home_category_style.dart';
 
 class PostCard extends StatelessWidget {
   final PostMeta post;
@@ -44,7 +45,7 @@ class PostCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.06),
+        color: Colors.black.withOpacity(0.04),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -57,7 +58,7 @@ class PostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final thumb_url = _thumbnailUrl();
-
+    final style = resolveHomeCategoryStyle(post);
 
     return InkWell(
       onTap: on_tap,
@@ -108,27 +109,33 @@ class PostCard extends StatelessWidget {
                         ),
                       ),
                       /*좌 상단 카테고리 칩*/
-                      if(post.category != null && post.category!.isNotEmpty)
-                        Positioned(
-                          top: 10,
-                          left: 10,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal:  10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.45),
-                              borderRadius: BorderRadius.circular(999),
-
-                            ),
-                            child: Text(
-                              post.category!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextUtil.get12(context,Colors.white),
-                            ),
-                            
+                      Positioned(
+                        top: 10,
+                        left: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: style.bg_color,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(color: style.border_color, width: 1.2),
+                            boxShadow: [
+                              BoxShadow(
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                                color: Colors.black.withOpacity(0.18),
+                              ),
+                            ],
                           ),
-                          
+                          child: Text(
+                            style.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextUtil.get12(context, style.text_color).copyWith(
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ),
+                      ),
     
                 
                       ]

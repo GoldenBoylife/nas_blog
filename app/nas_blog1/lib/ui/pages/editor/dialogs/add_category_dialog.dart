@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:nas_blog1/config/category_icon_registry..dart';
+import 'package:nas_blog1/config/category_icon_registry.dart';
 import 'package:nas_blog1/models/blog_category.dart';
 import 'package:nas_blog1/ui/pages/editor/dialogs/add_category_dialog.dart';
 
